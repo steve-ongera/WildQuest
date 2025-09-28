@@ -63,7 +63,7 @@
                         <a href="{% url 'index' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">Home</a>
                         <a href="{% url 'about' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About Us</a>
                         <a href="{% url 'service' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'service' %}active{% endif %}">Services</a>
-                        <a href="#" class="nav-item nav-link {% if request.resolver_match.url_name == 'project' %}active{% endif %}">Adventures</a>
+                        <a href="{% url 'events_list'%}" class="nav-item nav-link {% if request.resolver_match.url_name == 'events_list' %}active{% endif %}">Adventures</a>
                         
                         <div class="nav-item dropdown">
                             <a href="#!" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">More</a>
