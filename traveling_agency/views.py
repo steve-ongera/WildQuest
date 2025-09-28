@@ -131,7 +131,7 @@ def events_list(request):
             'sort': sort,
         }
     }
-    return render(request, 'wildquest/events/list.html', context)
+    return render(request, 'events/list.html', context)
 
 def event_detail(request, slug):
     """Event detail view"""
@@ -166,7 +166,7 @@ def event_detail(request, slug):
         'features': features,
         'is_booking_open': event.is_booking_open,
     }
-    return render(request, 'wildquest/events/detail.html', context)
+    return render(request, 'events/detail.html', context)
 
 def booking_create(request, event_slug):
     """Create a new booking"""
@@ -236,7 +236,7 @@ def booking_create(request, event_slug):
         'form': form,
         'pricing_tiers': event.pricing_tiers.filter(is_active=True),
     }
-    return render(request, 'wildquest/bookings/create.html', context)
+    return render(request, 'bookings/create.html', context)
 
 def booking_detail(request, booking_id):
     """View booking details"""
@@ -254,7 +254,7 @@ def booking_detail(request, booking_id):
     context = {
         'booking': booking,
     }
-    return render(request, 'wildquest/bookings/detail.html', context)
+    return render(request, 'bookings/detail.html', context)
 
 def whatsapp_booking(request, event_slug):
     """Handle WhatsApp booking requests"""
@@ -320,7 +320,7 @@ def category_events(request, slug):
         'category': category,
         'page_obj': page_obj,
     }
-    return render(request, 'wildquest/events/category.html', context)
+    return render(request, 'events/category.html', context)
 
 def search_events(request):
     """Search events"""
@@ -345,7 +345,7 @@ def search_events(request):
         'query': query,
         'page_obj': page_obj,
     }
-    return render(request, 'wildquest/events/search.html', context)
+    return render(request, 'events/search.html', context)
 
 def add_review(request, event_slug):
     """Add review for an event"""
@@ -378,7 +378,7 @@ def add_review(request, event_slug):
         'event': event,
         'form': form,
     }
-    return render(request, 'wildquest/reviews/add.html', context)
+    return render(request, 'reviews/add.html', context)
 
 @require_POST
 def subscribe_newsletter(request):
@@ -406,7 +406,7 @@ def booking_confirmation(request, booking_id):
     context = {
         'booking': booking,
     }
-    return render(request, 'wildquest/bookings/confirmation.html', context)
+    return render(request, 'bookings/confirmation.html', context)
 
 def event_calendar(request):
     """Calendar view of events"""
@@ -430,7 +430,7 @@ def event_calendar(request):
     context = {
         'calendar_events': json.dumps(calendar_events),
     }
-    return render(request, 'wildquest/events/calendar.html', context)
+    return render(request, 'events/calendar.html', context)
 
 def locations_list(request):
     """List all locations"""
@@ -443,7 +443,7 @@ def locations_list(request):
     context = {
         'locations': locations,
     }
-    return render(request, 'wildquest/locations/list.html', context)
+    return render(request, 'locations/list.html', context)
 
 def location_detail(request, location_id):
     """Location detail with events"""
@@ -501,23 +501,13 @@ def check_availability(request, event_id):
         'message': 'Available' if available else 'Not enough spots available'
     })
 
-def index(request):
-    return render(request, 'index.html')
 
-def about(request):
-    return render(request, 'about.html')
-
-def contact(request):
-    return render(request, 'contact.html')
 
 def feature(request):
     return render(request, 'feature.html')
 
 def project(request):
     return render(request, 'project.html')
-
-def service(request):
-    return render(request, 'service.html')
 
 def team(request):
     return render(request, 'team.html')
