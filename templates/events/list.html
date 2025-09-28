@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Events - WildQuest Kenya{% endblock %}
+
+{% block content %}
+<!-- Hero Start -->
+<div class="container-fluid pb-5 bg-primary hero-header">
+    <div class="container py-5">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-6 text-center text-lg-start">
+                <h1 class="display-1 mb-0 animated slideInLeft">Events</h1>
+            </div>
+            <div class="col-lg-6 animated slideInRight">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center justify-content-lg-end mb-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'index' %}">Home</a></li>
+                        <li class="breadcrumb-item text-secondary active" aria-current="page">Events</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Hero End -->
+
+<!-- Events List Start -->
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row">
+            <!-- Filters Sidebar -->
+            <div class="col-lg-3 mb-4">
+                <div class="bg-light p-4 rounded">
+                    <h5 class="mb-4">Filter Events</h5>
+                    
+                    <form method="get" action="{% url 'events_list' %}">
+                        <!-- Search -->
+                        <div class="mb-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" value="{{ current_filters.search|default:'' }}" placeholder="Search events...">
+                        </div>
+                        
+                        <!-- Category Filter -->
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.slug }}" {% if current_filters.category == category.slug %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Event Type Filter -->
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Event Type</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="">All Types</option>
+                                {% for type_value, type_label in event_types %}
+                                <option value="{{ type_value }}" {% if current_filters.type == type_value %}selected{% endif %}>
+                                    {{ type_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Location Filter -->
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <select class="form-select" id="location" name="location">
+                                <option value="">All Locations</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" {% if current_filters.location == location.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ location.name }}, {{ location.county }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Sort -->
+                        <div class="mb-3">
+                            <label for="sort" class="form-label">Sort By</label>
+                            <select class="form-select" id="sort" name="sort">
+                                <option value="date" {% if current_filters.sort == 'date' %}selected{% endif %}>Date</option>
+                                <option value="price" {% if current_filters.sort == 'price' %}selected{% endif %}>Price: Low to High</option>
+                                <option value="price_desc" {% if current_filters.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                                <option value="popularity" {% if current_filters.sort == 'popularity' %}selected{% endif %}>Popularity</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 mb-2">Apply Filters</button>
+                        <a href="{% url 'events_list' %}" class="btn btn-outline-secondary w-100">Clear Filters</a>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Events Grid -->
+            <div class="col-lg-9">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h3>{{ page_obj.paginator.count }} Event{{ page_obj.paginator.count|pluralize }} Found</h3>
+                    </div>
+                </div>
+                
+                {% if page_obj %}
+                <div class="row g-4">
+                    {% for event in page_obj %}
+                    <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
+                        <div class="card event-card h-100 border-0 shadow-sm">
+                            <div class="position-relative">
+                                {% if event.images.exists %}
+                                    {% for image in event.images.all %}
+                                        {% if image.is_primary %}
+                                            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.alt_text }}" style="height: 250px; object-fit: cover;">
+                                           
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <img src="{% static 'img/event-placeholder.jpg' %}" class="card-img-top" alt="Event" style="height: 250px; object-fit: cover;">
+                                {% endif %}
+                                
+                                {% if event.featured %}
+                                <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2">Featured</span>
+                                {% endif %}
+                                
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <span class="badge bg-primary">{{ event.get_event_type_display }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body d-flex flex-column">
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fa fa-map-marker-alt me-1"></i>{{ event.location.name }}, {{ event.location.county }}
+                                    </small>
+                                </div>
+                                
+                                <h5 class="card-title">
+                                    <a href="{% url 'event_detail' slug=event.slug %}" class="text-decoration-none text-dark">
+                                        {{ event.title }}
+                                    </a>
+                                </h5>
+                                
+                                <p class="card-text text-muted flex-grow-1">{{ event.short_description }}</p>
+                                
+                                <div class="mt-auto">
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-6">
+                                            <small class="text-muted">
+                                                <i class="fa fa-calendar me-1"></i>{{ event.start_date|date:"M d, Y" }}
+                                            </small>
+                                        </div>
+                                        <div class="col-6 text-end">
+                                            <small class="text-muted">
+                                                <i class="fa fa-clock me-1"></i>{{ event.duration_days }} day{{ event.duration_days|pluralize }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-primary mb-0">KES {{ event.base_price|floatformat:0|default:"0" }}</h6>
+                                            <small class="text-muted">per person</small>
+                                        </div>
+                                        <div>
+                                            {% if event.is_booking_open %}
+                                                <span class="badge bg-success">{{ event.available_spots }} spots left</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Booking Closed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <a href="{% url 'event_detail' slug=event.slug %}" class="btn btn-primary w-100">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Events pagination" class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fa fa-calendar-times fa-5x text-muted mb-4"></i>
+                    <h4>No Events Found</h4>
+                    <p class="text-muted">Try adjusting your filters or search terms.</p>
+                    <a href="{% url 'events_list' %}" class="btn btn-primary">View All Events</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Events List End -->
+
+<style>
+.event-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.card-img-top {
+    transition: transform 0.3s ease;
+}
+
+.event-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.card {
+    overflow: hidden;
+}
+</style>
+
+{% endblock %}

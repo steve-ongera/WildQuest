@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ event.title }} - WildQuest Kenya{% endblock %}
+
+{% block content %}
+<!-- Hero Start -->
+<div class="container-fluid pb-5 bg-primary hero-header">
+    <div class="container py-5">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-8 text-center text-lg-start">
+                <h1 class="display-4 mb-0 animated slideInLeft">{{ event.title }}</h1>
+                <p class="text-light mt-2">{{ event.category.name }} • {{ event.location.name }}, {{ event.location.county }}</p>
+            </div>
+            <div class="col-lg-4 animated slideInRight">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center justify-content-lg-end mb-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'index' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'events_list' %}">Events</a></li>
+                        <li class="breadcrumb-item text-secondary active" aria-current="page">{{ event.title|truncatechars:30 }}</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Hero End -->
+
+<!-- Event Detail Start -->
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row g-5">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Image Gallery -->
+                <div class="mb-5">
+                    {% if event.images.exists %}
+                    <div id="eventCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner rounded">
+                            {% for image in event.images.all %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text }}" style="height: 400px; object-fit: cover;">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if event.images.count > 1 %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <img src="{% static 'img/event-placeholder.jpg' %}" class="img-fluid rounded w-100" alt="Event" style="height: 400px; object-fit: cover;">
+                    {% endif %}
+                </div>
+                
+                <!-- Event Details -->
+                <div class="mb-5">
+                    <h2 class="mb-4">About This Experience</h2>
+                    <p class="lead">{{ event.short_description }}</p>
+                    <div class="mt-4">
+                        {{ event.description|linebreaks }}
+                    </div>
+                </div>
+                
+                <!-- What's Included -->
+                <div class="mb-5">
+                    <h3 class="mb-4">What's Included</h3>
+                    <div class="bg-light p-4 rounded">
+                        {{ event.includes|linebreaks }}
+                    </div>
+                </div>
+                
+                <!-- What's Excluded -->
+                {% if event.excludes %}
+                <div class="mb-5">
+                    <h3 class="mb-4">What's Not Included</h3>
+                    <div class="bg-light p-4 rounded">
+                        {{ event.excludes|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Requirements -->
+                {% if event.requirements %}
+                <div class="mb-5">
+                    <h3 class="mb-4">Requirements</h3>
+                    <div class="alert alert-info">
+                        {{ event.requirements|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Itinerary -->
+                {% if event.itinerary.exists %}
+                <div class="mb-5">
+                    <h3 class="mb-4">Day-by-Day Itinerary</h3>
+                    <div class="accordion" id="itineraryAccordion">
+                        {% for day in event.itinerary.all %}
+                        <div class="accordion-item">
+                            <h4 class="accordion-header" id="heading{{ day.day_number }}">
+                                <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ day.day_number }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ day.day_number }}">
+                                    Day {{ day.day_number }}: {{ day.title }}
+                                </button>
+                            </h4>
+                            <div id="collapse{{ day.day_number }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ day.day_number }}" data-bs-parent="#itineraryAccordion">
+                                <div class="accordion-body">
+                                    <p>{{ day.description }}</p>
+                                    <h6>Activities:</h6>
+                                    <p>{{ day.activities }}</p>
+                                    {% if day.meals_included %}
+                                    <h6>Meals Included:</h6>
+                                    <p>{{ day.meals_included }}</p>
+                                    {% endif %}
+                                    {% if day.accommodation %}
+                                    <h6>Accommodation:</h6>
+                                    <p>{{ day.accommodation }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Features -->
+                {% if features %}
+                <div class="mb-5">
+                    <h3 class="mb-4">Features & Amenities</h3>
+                    <div class="row g-3">
+                        {% for feature_assignment in features %}
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                {% if feature_assignment.is_included %}
+                                <i class="fa fa-check-circle text-success me-2"></i>
+                                {% else %}
+                                <i class="fa fa-times-circle text-danger me-2"></i>
+                                {% endif %}
+                                <span>{{ feature_assignment.feature.name }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- FAQ -->
+                {% if event.faqs.exists %}
+                <div class="mb-5">
+                    <h3 class="mb-4">Frequently Asked Questions</h3>
+                    <div class="accordion" id="faqAccordion">
+                        {% for faq in event.faqs.all %}
+                        <div class="accordion-item">
+                            <h4 class="accordion-header" id="faqHeading{{ forloop.counter }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse{{ forloop.counter }}" aria-expanded="false" aria-controls="faqCollapse{{ forloop.counter }}">
+                                    {{ faq.question }}
+                                </button>
+                            </h4>
+                            <div id="faqCollapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="faqHeading{{ forloop.counter }}" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    {{ faq.answer|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Reviews -->
+                {% if reviews %}
+                <div class="mb-5">
+                    <h3 class="mb-4">
+                        Customer Reviews
+                        {% if avg_rating %}
+                        <span class="text-warning">
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= avg_rating|floatformat:0 %}
+                                    <i class="fa fa-star"></i>
+                                {% else %}
+                                    <i class="fa fa-star-o"></i>
+                                {% endif %}
+                            {% endfor %}
+                            ({{ avg_rating|floatformat:1 }}/5)
+                        </span>
+                        {% endif %}
+                    </h3>
+                    
+                    {% for review in reviews|slice:":3" %}
+                    <div class="border-bottom mb-4 pb-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">{{ review.reviewer_name }}</h6>
+                            <div class="text-warning">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= review.rating %}
+                                        <i class="fa fa-star"></i>
+                                    {% else %}
+                                        <i class="fa fa-star-o"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <h6 class="text-primary">{{ review.title }}</h6>
+                        <p class="mb-2">{{ review.comment }}</p>
+                        <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                        {% if review.is_verified %}
+                        <span class="badge bg-success ms-2">Verified</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    <a href="{% url 'add_review' event_slug=event.slug %}" class="btn btn-outline-primary">Write a Review</a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Booking Sidebar -->
+            <div class="col-lg-4">
+                <div class="bg-light p-4 rounded sticky-top">
+                    <!-- Event Info -->
+                    <div class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <i class="fa fa-calendar fa-2x text-primary mb-2"></i>
+                                    <h6>Start Date</h6>
+                                    <p class="mb-0">{{ event.start_date|date:"M d, Y" }}</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <i class="fa fa-clock fa-2x text-primary mb-2"></i>
+                                    <h6>Duration</h6>
+                                    <p class="mb-0">{{ event.duration_days }} day{{ event.duration_days|pluralize }}</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <i class="fa fa-users fa-2x text-primary mb-2"></i>
+                                    <h6>Max Participants</h6>
+                                    <p class="mb-0">{{ event.max_participants }} people</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <i class="fa fa-map-marker-alt fa-2x text-primary mb-2"></i>
+                                    <h6>Location</h6>
+                                    <p class="mb-0">{{ event.location.name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Pricing</h5>
+                        
+                        {% if event.pricing_tiers.exists %}
+                        {% for tier in event.pricing_tiers.all %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ tier.name }}</span>
+                            <strong>KES {{ tier.price|floatformat:0 }}</strong>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Regular</span>
+                            <strong>KES {{ event.base_price|floatformat:0 }}</strong>
+                        </div>
+                        {% if event.child_price %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Child</span>
+                            <strong>KES {{ event.child_price|floatformat:0 }}</strong>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                        
+                        {% if event.group_discount_percentage > 0 %}
+                        <div class="alert alert-info mt-3">
+                            <small><i class="fa fa-info-circle"></i> {{ event.group_discount_percentage }}% discount for groups of 5+</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Availability -->
+                    <div class="mb-4">
+                        {% if event.is_booking_open %}
+                        <div class="alert alert-success">
+                            <i class="fa fa-check-circle"></i> {{ event.available_spots }} spots available
+                        </div>
+                        {% else %}
+                        <div class="alert alert-danger">
+                            <i class="fa fa-times-circle"></i> Booking closed
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Booking Buttons -->
+                    {% if event.is_booking_open %}
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'booking_create' event_slug=event.slug %}" class="btn btn-primary btn-lg">Book Now</a>
+                        {% if event.whatsapp_booking %}
+                        <button class="btn btn-outline-success" onclick="openWhatsAppBooking()">
+                            <i class="fab fa-whatsapp"></i> Book via WhatsApp
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Booking Deadline -->
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            Booking deadline: {{ event.booking_deadline|date:"M d, Y" }}
+                        </small>
+                    </div>
+                    
+                    <!-- Cancellation Policy -->
+                    <div class="mt-4">
+                        <h6>Cancellation Policy</h6>
+                        <small class="text-muted">{{ event.cancellation_policy|truncatewords:20 }}</small>
+                    </div>
+                    
+                    <!-- Contact Info -->
+                    <div class="mt-4 text-center">
+                        <h6>Need Help?</h6>
+                        <p class="mb-2">
+                            <a href="tel:+254712345678" class="text-decoration-none">
+                                <i class="fa fa-phone"></i> +254 712 345 678
+                            </a>
+                        </p>
+                        <p class="mb-0">
+                            <a href="mailto:info@wildquestkenya.com" class="text-decoration-none">
+                                <i class="fa fa-envelope"></i> info@wildquestkenya.com
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Events -->
+        {% if related_events %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="mb-4">Similar Events</h3>
+                <div class="row g-4">
+                    {% for related_event in related_events %}
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            {% if related_event.images.exists %}
+                                {% for image in related_event.images.all %}
+                                    {% if image.is_primary %}
+                                        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.alt_text }}" style="height: 200px; object-fit: cover;">
+                                       
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <a href="{% url 'event_detail' slug=related_event.slug %}" class="text-decoration-none text-dark">
+                                        {{ related_event.title|truncatechars:50 }}
+                                    </a>
+                                </h6>
+                                <p class="card-text text-muted small">{{ related_event.short_description|truncatechars:80 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-primary">KES {{ related_event.base_price|floatformat:0 }}</small>
+                                    <small class="text-muted">{{ related_event.start_date|date:"M d" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- Event Detail End -->
+
+<!-- WhatsApp Booking Modal -->
+<div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="whatsappModalLabel">WhatsApp Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="whatsappForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="participants" class="form-label">Number of Participants</label>
+                        <select class="form-select" id="participants" name="participants" required>
+                            <option value="">Select participants</option>
+                            {% for i in "123456789"|make_list %}
+                            <option value="{{ forloop.counter }}">{{ forloop.counter }} person{{ forloop.counter|pluralize }}</option>
+                            {% endfor %}
+                            <option value="10+">10+ people</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Additional Message (Optional)</label>
+                        <textarea class="form-control" id="message" name="message" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitWhatsAppBooking()">
+                    <i class="fab fa-whatsapp"></i> Send WhatsApp Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openWhatsAppBooking() {
+    const modal = new bootstrap.Modal(document.getElementById('whatsappModal'));
+    modal.show();
+}
+
+function submitWhatsAppBooking() {
+    const form = document.getElementById('whatsappForm');
+    const formData = new FormData(form);
+    
+    // Basic validation
+    const name = formData.get('name');
+    const phone = formData.get('phone');
+    const participants = formData.get('participants');
+    
+    if (!name || !phone || !participants) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+    
+    // Submit to WhatsApp booking endpoint
+    fetch('{% url "whatsapp_booking" event_slug=event.slug %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('whatsappModal')).hide();
+            // Open WhatsApp
+            window.open(data.whatsapp_url, '_blank');
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Booking {{ booking.booking_id }} - WildQuest Kenya{% endblock %}
+
+{% block content %}
+<!-- Hero Start -->
+<div class="container-fluid pb-5 bg-primary hero-header">
+    <div class="container py-5">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-8 text-center text-lg-start">
+                <h1 class="display-4 mb-0 animated slideInLeft">Booking Details</h1>
+                <p class="text-light mt-2">Booking ID: {{ booking.booking_id }}</p>
+            </div>
+            <div class="col-lg-4 animated slideInRight">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center justify-content-lg-end mb-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'home' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'events_list' %}">Events</a></li>
+                        <li class="breadcrumb-item text-secondary active" aria-current="page">Booking</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        
+        <div class="row g-5">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Event Information -->
+                <div class="bg-light p-4 rounded mb-4">
+                    <h4 class="mb-3">Event Details</h4>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>{{ booking.event.title }}</h5>
+                            <p class="text-muted mb-2">
+                                <i class="fa fa-map-marker-alt me-2"></i>{{ booking.event.location.name }}, {{ booking.event.location.county }}
+                            </p>
+                            <p class="text-muted mb-2">
+                                <i class="fa fa-calendar me-2"></i>{{ booking.event.start_date|date:"M d, Y" }} - {{ booking.event.end_date|date:"M d, Y" }}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="fa fa-clock me-2"></i>{{ booking.event.duration_days }} day{{ booking.event.duration_days|pluralize }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if booking.event.images.exists %}
+                                {% for image in booking.event.images.all %}
+                                    {% if image.is_primary %}
+                                        <img src="{{ image.image.url }}" class="img-fluid rounded" alt="{{ image.alt_text }}" style="height: 100px; width: 100px; object-fit: cover;">
+                                        {% break %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Information -->
+                <div class="bg-light p-4 rounded mb-4">
+                    <h4 class="mb-3">Customer Information</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6>Contact Details</h6>
+                            <p class="mb-1"><strong>Name:</strong> {{ booking.customer_name }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ booking.customer_email }}</p>
+                            <p class="mb-1"><strong>Phone:</strong> {{ booking.customer_phone }}</p>
+                            {% if booking.customer_address %}
+                            <p class="mb-0"><strong>Address:</strong> {{ booking.customer_address }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {% if booking.emergency_contact_name %}
+                            <h6>Emergency Contact</h6>
+                            <p class="mb-1"><strong>Name:</strong> {{ booking.emergency_contact_name }}</p>
+                            <p class="mb-0"><strong>Phone:</strong> {{ booking.emergency_contact_phone }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Participants -->
+                {% if booking.participants.exists %}
+                <div class="bg-light p-4 rounded mb-4">
+                    <h4 class="mb-3">Participants ({{ booking.participants.count }})</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Age</th>
+                                    <th>Type</th>
+                                    <th>ID/Passport</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for participant in booking.participants.all %}
+                                <tr>
+                                    <td>{{ participant.name }}</td>
+                                    <td>{% if participant.age %}{{ participant.age }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        <span class="badge {% if participant.participant_type == 'adult' %}bg-primary{% else %}bg-info{% endif %}">
+                                            {{ participant.get_participant_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if participant.id_number %}{{ participant.id_number }}{% elif participant.passport_number %}{{ participant.passport_number }}{% else %}-{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Additional Information -->
+                {% if booking.dietary_requirements or booking.special_requests %}
+                <div class="bg-light p-4 rounded mb-4">
+                    <h4 class="mb-3">Additional Information</h4>
+                    {% if booking.dietary_requirements %}
+                    <div class="mb-3">
+                        <h6>Dietary Requirements</h6>
+                        <p>{{ booking.dietary_requirements }}</p>
+                    </div>
+                    {% endif %}
+                    {% if booking.special_requests %}
+                    <div class="mb-3">
+                        <h6>Special Requests</h6>
+                        <p>{{ booking.special_requests }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Payment History -->
+                {% if booking.payments.exists %}
+                <div class="bg-light p-4 rounded mb-4">
+                    <h4 class="mb-3">Payment History</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Payment ID</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in booking.payments.all %}
+                                <tr>
+                                    <td>{{ payment.payment_id }}</td>
+                                    <td>KES {{ payment.amount|floatformat:0 }}</td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if payment.status == 'completed' %}bg-success
+                                            {% elif payment.status == 'pending' %}bg-warning
+                                            {% elif payment.status == 'failed' %}bg-danger
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ payment.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ payment.initiated_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Booking Summary -->
+                <div class="bg-light p-4 rounded mb-4 sticky-top">
+                    <h5 class="mb-3">Booking Summary</h5>
+                    
+                    <!-- Status -->
+                    <div class="mb-3">
+                        <h6>Status</h6>
+                        <span class="badge 
+                            {% if booking.status == 'pending' %}bg-warning
+                            {% elif booking.status == 'confirmed' %}bg-info
+                            {% elif booking.status == 'paid' %}bg-success
+                            {% elif booking.status == 'cancelled' %}bg-danger
+                            {% elif booking.status == 'completed' %}bg-success
+                            {% else %}bg-secondary{% endif %} fs-6">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <!-- Booking Details -->
+                    <div class="mb-3">
+                        <h6>Booking Details</h6>
+                        <p class="mb-1"><strong>Booking ID:</strong> {{ booking.booking_id }}</p>
+                        <p class="mb-1"><strong>Booked on:</strong> {{ booking.booked_at|date:"M d, Y H:i" }}</p>
+                        <p class="mb-1"><strong>Method:</strong> {{ booking.get_booking_method_display }}</p>
+                        <p class="mb-0"><strong>Participants:</strong> {{ booking.number_of_participants }}</p>
+                    </div>
+                    
+                    <!-- Pricing Breakdown -->
+                    <div class="mb-4">
+                        <h6>Pricing Breakdown</h6>
+                        {% if booking.pricing_tier %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>{{ booking.pricing_tier.name }}</span>
+                            <span></span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Base Amount</span>
+                            <span>KES {{ booking.base_amount|floatformat:0 }}</span>
+                        </div>
+                        
+                        {% if booking.discount_amount > 0 %}
+                        <div class="d-flex justify-content-between mb-2 text-success">
+                            <span>Discount</span>
+                            <span>-KES {{ booking.discount_amount|floatformat:0 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if booking.tax_amount > 0 %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax</span>
+                            <span>KES {{ booking.tax_amount|floatformat:0 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total Amount</strong>
+                            <strong>KES {{ booking.total_amount|floatformat:0 }}</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        {% if booking.status == 'confirmed' and booking.event.online_payment %}
+                        <button class="btn btn-primary">Make Payment</button>
+                        {% endif %}
+                        
+                        {% if booking.status in 'pending,confirmed' %}
+                        <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">Cancel Booking</button>
+                        {% endif %}
+                        
+                        <a href="{% url 'event_detail' slug=booking.event.slug %}" class="btn btn-outline-primary">View Event</a>
+                        
+                        {% if booking.status == 'completed' %}
+                        <a href="{% url 'add_review' event_slug=booking.event.slug %}" class="btn btn-outline-success">Write Review</a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Contact Support -->
+                    <div class="mt-4 text-center border-top pt-3">
+                        <h6>Need Help?</h6>
+                        <p class="mb-2">
+                            <a href="tel:+254712345678" class="text-decoration-none">
+                                <i class="fa fa-phone"></i> +254 712 345 678
+                            </a>
+                        </p>
+                        <p class="mb-0">
+                            <a href="mailto:info@wildquestkenya.com" class="text-decoration-none">
+                                <i class="fa fa-envelope"></i> info@wildquestkenya.com
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Booking Details End -->
+
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">Cancel Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this booking?</p>
+                <div class="alert alert-warning">
+                    <strong>Cancellation Policy:</strong><br>
+                    {{ booking.event.cancellation_policy|truncatewords:30 }}
+                </div>
+                <div class="mb-3">
+                    <label for="cancellationReason" class="form-label">Reason for Cancellation</label>
+                    <textarea class="form-control" id="cancellationReason" rows="3" placeholder="Please tell us why you're cancelling..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Booking</button>
+                <button type="button" class="btn btn-danger" onclick="cancelBooking()">Yes, Cancel Booking</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function cancelBooking() {
+    const reason = document.getElementById('cancellationReason').value;
+    
+    if (confirm('This action cannot be undone. Are you sure you want to cancel?')) {
+        // Here you would typically make an AJAX call to cancel the booking
+        alert('Booking cancellation request has been submitted. You will receive a confirmation email shortly.');
+        bootstrap.Modal.getInstance(document.getElementById('cancelModal')).hide();
+    }
+}
+
+// Print booking functionality
+function printBooking() {
+    window.print();
+}
+
+// Add print styles
+const printStyles = `
+    @media print {
+        .btn, .modal, nav, .breadcrumb { display: none !important; }
+        .container-fluid { padding: 0 !important; }
+        .hero-header { display: none !important; }
+    }
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = printStyles;
+document.head.appendChild(styleSheet);
+</script>
+
+{% endblock %}
+    </div>
+</div>
+<!-- Hero End -->
+
+<!-- Booking Details Start -->
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <!-- Status Alert -->
+        <div class="row mb-4">
+            <div class="col-12">
+                {% if booking.status == 'pending' %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fa fa-clock me-2"></i><strong>Booking Pending:</strong> Your booking is awaiting confirmation. You will receive an update within 24 hours.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% elif booking.status == 'confirmed' %}
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="fa fa-check-circle me-2"></i><strong>Booking Confirmed:</strong> Your booking has been confirmed. Please proceed with payment to secure your spot.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% elif booking.status == 'paid' %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa fa-check-circle me-2"></i><strong>Payment Complete:</strong> Your booking is fully confirmed and paid. See you on the adventure!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% elif booking.status == 'cancelled' %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fa fa-times-circle me-2"></i><strong>Booking Cancelled:</strong> This booking has been cancelled.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% elif booking.status == 'completed' %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa fa-flag-checkered me-2"></i><strong>Experience Complete:</strong> Thank you for choosing WildQuest Kenya! We hope you had an amazing time.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}

@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book {{ event.title }} - WildQuest Kenya{% endblock %}
+
+{% block content %}
+<!-- Hero Start -->
+<div class="container-fluid pb-5 bg-primary hero-header">
+    <div class="container py-5">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-8 text-center text-lg-start">
+                <h1 class="display-4 mb-0 animated slideInLeft">Book Your Adventure</h1>
+                <p class="text-light mt-2">{{ event.title }}</p>
+            </div>
+            <div class="col-lg-4 animated slideInRight">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center justify-content-lg-end mb-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'index' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'events_list' %}">Events</a></li>
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'event_detail' slug=event.slug %}">{{ event.title|truncatechars:20 }}</a></li>
+                        <li class="breadcrumb-item text-secondary active" aria-current="page">Book</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Hero End -->
+
+<!-- Booking Form Start -->
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row g-5">
+            <!-- Booking Form -->
+            <div class="col-lg-8">
+                <div class="bg-light p-5 rounded">
+                    <h3 class="mb-4">Booking Details</h3>
+                    
+                    <form method="post" id="bookingForm">
+                        {% csrf_token %}
+                        
+                        <!-- Personal Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Personal Information</h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="customer_email" name="customer_email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_phone" class="form-label">Phone Number *</label>
+                                <input type="tel" class="form-control" id="customer_phone" name="customer_phone" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_address" class="form-label">Address</label>
+                                <input type="text" class="form-control" id="customer_address" name="customer_address">
+                            </div>
+                        </div>
+                        
+                        <!-- Emergency Contact -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Emergency Contact</h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_name" class="form-label">Emergency Contact Name</label>
+                                <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_phone" class="form-label">Emergency Contact Phone</label>
+                                <input type="tel" class="form-control" id="emergency_contact_phone" name="emergency_contact_phone">
+                            </div>
+                        </div>
+                        
+                        <!-- Booking Details -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Booking Details</h5>
+                            </div>
+                            
+                            {% if pricing_tiers %}
+                            <div class="col-12 mb-3">
+                                <label for="pricing_tier" class="form-label">Select Package</label>
+                                <select class="form-select" id="pricing_tier" name="pricing_tier" onchange="updatePricing()">
+                                    <option value="">Regular Package</option>
+                                    {% for tier in pricing_tiers %}
+                                    <option value="{{ tier.id }}" data-price="{{ tier.price }}" data-available="{{ tier.available_spots }}">
+                                        {{ tier.name }} - KES {{ tier.price|floatformat:0 }} ({{ tier.available_spots }} spots available)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="adults_count" class="form-label">Number of Adults *</label>
+                                <select class="form-select" id="adults_count" name="adults_count" required onchange="updatePricing()">
+                                    <option value="">Select adults</option>
+                                    {% for i in "123456789"|make_list %}
+                                    <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                                    {% endfor %}
+                                    <option value="10">10+</option>
+                                </select>
+                            </div>
+                            
+                            {% if event.child_price %}
+                            <div class="col-md-6 mb-3">
+                                <label for="children_count" class="form-label">Number of Children</label>
+                                <select class="form-select" id="children_count" name="children_count" onchange="updatePricing()">
+                                    <option value="0">0</option>
+                                    {% for i in "123456789"|make_list %}
+                                    <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="col-12 mb-3">
+                                <label for="booking_method" class="form-label">Booking Method *</label>
+                                <select class="form-select" id="booking_method" name="booking_method" required>
+                                    <option value="online">Online</option>
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="phone">Phone</option>
+                                    <option value="email">Email</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Participants Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Participants Information</h5>
+                                <div id="participantsContainer">
+                                    <!-- Participants will be added dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Special Requests -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Additional Information</h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dietary_requirements" class="form-label">Dietary Requirements</label>
+                                <textarea class="form-control" id="dietary_requirements" name="dietary_requirements" rows="3" placeholder="Any special dietary needs..."></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="special_requests" class="form-label">Special Requests</label>
+                                <textarea class="form-control" id="special_requests" name="special_requests" rows="3" placeholder="Any special requests or notes..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms_accepted" required>
+                                    <label class="form-check-label" for="terms_accepted">
+                                        I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a> and <a href="#" data-bs-toggle="modal" data-bs-target="#cancellationModal">Cancellation Policy</a> *
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">Complete Booking</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Booking Summary -->
+            <div class="col-lg-4">
+                <div class="bg-light p-4 rounded sticky-top">
+                    <h5 class="mb-4">Booking Summary</h5>
+                    
+                    <!-- Event Info -->
+                    <div class="mb-4">
+                        {% if event.images.exists %}
+                            {% for image in event.images.all %}
+                                {% if image.is_primary %}
+                                    <img src="{{ image.image.url }}" class="img-fluid rounded mb-3" alt="{{ image.alt_text }}" style="height: 200px; width: 100%; object-fit: cover;">
+                                   
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <h6>{{ event.title }}</h6>
+                        <p class="text-muted mb-1">
+                            <i class="fa fa-calendar me-2"></i>{{ event.start_date|date:"M d, Y" }} - {{ event.end_date|date:"M d, Y" }}
+                        </p>
+                        <p class="text-muted mb-1">
+                            <i class="fa fa-clock me-2"></i>{{ event.duration_days }} day{{ event.duration_days|pluralize }}
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fa fa-map-marker-alt me-2"></i>{{ event.location.name }}, {{ event.location.county }}
+                        </p>
+                    </div>
+                    
+                    <!-- Pricing Breakdown -->
+                    <div class="mb-4" id="pricingBreakdown">
+                        <h6 class="border-bottom pb-2">Pricing Breakdown</h6>
+                        <div class="pricing-details">
+                            <!-- Pricing will be updated dynamically -->
+                            <p class="text-muted">Select participants to see pricing</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Available Spots -->
+                    <div class="mb-4">
+                        <h6>Availability</h6>
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle"></i> {{ event.available_spots }} spots remaining
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Info -->
+                    <div class="text-center">
+                        <h6>Need Help?</h6>
+                        <p class="mb-2">
+                            <a href="tel:+254712345678" class="text-decoration-none">
+                                <i class="fa fa-phone"></i> +254 712 345 678
+                            </a>
+                        </p>
+                        <p class="mb-0">
+                            <a href="mailto:info@wildquestkenya.com" class="text-decoration-none">
+                                <i class="fa fa-envelope"></i> info@wildquestkenya.com
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Booking Form End -->
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Booking and Payment</h6>
+                <p>All bookings must be confirmed with full payment or deposit as specified. Prices are subject to change without notice.</p>
+                
+                <h6>2. Participation Requirements</h6>
+                <p>Participants must meet physical and health requirements as specified for each event. Medical conditions must be disclosed during booking.</p>
+                
+                <h6>3. Safety and Liability</h6>
+                <p>Participants engage in activities at their own risk. WildQuest Kenya maintains appropriate insurance but participants are advised to have personal travel insurance.</p>
+                
+                <h6>4. Weather and Conditions</h6>
+                <p>Events may be modified or cancelled due to weather conditions or unforeseen circumstances. Alternative arrangements will be provided where possible.</p>
+                
+                <h6>5. Conduct</h6>
+                <p>Participants must follow guide instructions and maintain respectful behavior. Violation may result in removal from the event without refund.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancellation Policy Modal -->
+<div class="modal fade" id="cancellationModal" tabindex="-1" aria-labelledby="cancellationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancellationModalLabel">Cancellation Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {{ event.cancellation_policy|linebreaks }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Event data for JavaScript
+const eventData = {
+    basePrice: {{ event.base_price }},
+    childPrice: {{ event.child_price|default:"0" }},
+    groupDiscount: {{ event.group_discount_percentage }},
+    pricingTiers: [
+        {% for tier in pricing_tiers %}
+        {
+            id: {{ tier.id }},
+            name: "{{ tier.name }}",
+            price: {{ tier.price }},
+            availableSpots: {{ tier.available_spots }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+};
+
+function updatePricing() {
+    const adultsCount = parseInt(document.getElementById('adults_count').value) || 0;
+    const childrenCount = parseInt(document.getElementById('children_count').value) || 0;
+    const pricingTierSelect = document.getElementById('pricing_tier');
+    const selectedTier = pricingTierSelect ? pricingTierSelect.value : null;
+    
+    const pricingBreakdown = document.getElementById('pricingBreakdown').querySelector('.pricing-details');
+    
+    if (adultsCount === 0) {
+        pricingBreakdown.innerHTML = '<p class="text-muted">Select participants to see pricing</p>';
+        updateParticipants(0, 0);
+        return;
+    }
+    
+    let adultPrice, childPrice;
+    let packageName = 'Regular Package';
+    
+    if (selectedTier) {
+        const tier = eventData.pricingTiers.find(t => t.id == selectedTier);
+        if (tier) {
+            adultPrice = tier.price;
+            packageName = tier.name;
+        }
+    } else {
+        adultPrice = eventData.basePrice;
+    }
+    
+    childPrice = eventData.childPrice || adultPrice;
+    
+    const adultTotal = adultsCount * adultPrice;
+    const childTotal = childrenCount * childPrice;
+    const subtotal = adultTotal + childTotal;
+    
+    // Calculate group discount
+    const totalParticipants = adultsCount + childrenCount;
+    let discount = 0;
+    if (totalParticipants >= 5 && eventData.groupDiscount > 0) {
+        discount = subtotal * (eventData.groupDiscount / 100);
+    }
+    
+    const total = subtotal - discount;
+    
+    let html = `
+        <div class="d-flex justify-content-between mb-2">
+            <span>${packageName}</span>
+            <span></span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+            <span>Adults (${adultsCount})</span>
+            <span>KES ${adultTotal.toLocaleString()}</span>
+        </div>
+    `;
+    
+    if (childrenCount > 0) {
+        html += `
+            <div class="d-flex justify-content-between mb-2">
+                <span>Children (${childrenCount})</span>
+                <span>KES ${childTotal.toLocaleString()}</span>
+            </div>
+        `;
+    }
+    
+    html += `
+        <div class="d-flex justify-content-between mb-2">
+            <span>Subtotal</span>
+            <span>KES ${subtotal.toLocaleString()}</span>
+        </div>
+    `;
+    
+    if (discount > 0) {
+        html += `
+            <div class="d-flex justify-content-between mb-2 text-success">
+                <span>Group Discount (${eventData.groupDiscount}%)</span>
+                <span>-KES ${discount.toLocaleString()}</span>
+            </div>
+        `;
+    }
+    
+    html += `
+        <hr>
+        <div class="d-flex justify-content-between">
+            <strong>Total</strong>
+            <strong>KES ${total.toLocaleString()}</strong>
+        </div>
+    `;
+    
+    pricingBreakdown.innerHTML = html;
+    updateParticipants(adultsCount, childrenCount);
+}
+
+function updateParticipants(adults, children) {
+    const container = document.getElementById('participantsContainer');
+    container.innerHTML = '';
+    
+    const totalParticipants = adults + children;
+    if (totalParticipants === 0) return;
+    
+    for (let i = 1; i <= adults; i++) {
+        container.innerHTML += createParticipantFields(i, 'adult', `Adult ${i}`);
+    }
+    
+    for (let i = 1; i <= children; i++) {
+        container.innerHTML += createParticipantFields(adults + i, 'child', `Child ${i}`);
+    }
+}
+
+function createParticipantFields(index, type, label) {
+    return `
+        <div class="row mb-3 participant-row">
+            <div class="col-12">
+                <h6>${label}</h6>
+            </div>
+            <div class="col-md-6 mb-2">
+                <input type="text" class="form-control" name="participant_names[]" placeholder="Full Name" required>
+            </div>
+            <div class="col-md-3 mb-2">
+                <input type="number" class="form-control" name="participant_ages[]" placeholder="Age" min="0" max="120">
+            </div>
+            <div class="col-md-3 mb-2">
+                <input type="hidden" name="participant_types[]" value="${type}">
+                <input type="text" class="form-control" name="participant_ids[]" placeholder="ID/Passport No.">
+            </div>
+        </div>
+    `;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        const adultsCount = parseInt(document.getElementById('adults_count').value) || 0;
+        const childrenCount = parseInt(document.getElementById('children_count').value) || 0;
+        const totalParticipants = adultsCount + childrenCount;
+        
+        if (totalParticipants === 0) {
+            e.preventDefault();
+            alert('Please select at least one participant.');
+            return;
+        }
+        
+        if (totalParticipants > {{ event.available_spots }}) {
+            e.preventDefault();
+            alert('Sorry, only {{ event.available_spots }} spots are available.');
+            return;
+        }
+        
+        // Check if all participant names are filled
+        const participantNames = document.querySelectorAll('input[name="participant_names[]"]');
+        for (let input of participantNames) {
+            if (!input.value.trim()) {
+                e.preventDefault();
+                alert('Please fill in all participant names.');
+                input.focus();
+                return;
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}
