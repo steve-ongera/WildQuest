@@ -6,132 +6,493 @@
     <title>{% block title %}WildQuest-Travel Kenya Admin{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     
     <style>
         :root {
-            --primary-color: #1e40af;
+            --primary-color: #0d6b68;
+            --primary-dark: #0a5652;
+            --primary-light: #1a8a86;
             --secondary-color: #64748b;
             --success-color: #059669;
             --warning-color: #d97706;
             --danger-color: #dc2626;
-            --sidebar-bg: #1f2937;
-            --sidebar-text: #e5e7eb;
+            --info-color: #0891b2;
+            --sidebar-bg: #0d6b68;
+            --sidebar-dark: #0a5652;
+            --sidebar-text: #e0f2f1;
+            --sidebar-text-muted: #b2dfdb;
+            --content-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background-color: #f8fafc;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--content-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
         }
 
-        .sidebar {
-            background: linear-gradient(180deg, var(--sidebar-bg) 0%, #374151 100%);
-            min-height: 100vh;
-            width: 250px;
+        /* Sidebar Styles */
+        .sidebar-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 1000;
+            width: 100%;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
             transition: all 0.3s ease;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-dark) 100%);
+            min-height: 100vh;
+            width: 280px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-lg);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-light) transparent;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 2px;
         }
 
         .sidebar.collapsed {
             width: 70px;
         }
 
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+        }
+
+        /* Sidebar Brand */
         .sidebar-brand {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            color: white;
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--white);
             text-decoration: none;
-            display: block;
-            font-weight: 600;
-            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
         }
 
         .sidebar-brand:hover {
-            color: white;
+            color: var(--sidebar-text);
             text-decoration: none;
+            background: rgba(255, 255, 255, 0.05);
         }
 
+        .sidebar-brand i {
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+            color: #4fd1c7;
+        }
+
+        .sidebar.collapsed .sidebar-brand .brand-text {
+            display: none;
+        }
+
+        /* Navigation */
         .sidebar-nav {
             padding: 1rem 0;
         }
 
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            color: var(--sidebar-text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 1.25rem 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar.collapsed .nav-section-title {
+            display: none;
+        }
+
         .nav-item {
             margin-bottom: 0.25rem;
+            position: relative;
         }
 
         .nav-link {
             color: var(--sidebar-text);
-            padding: 0.75rem 1.5rem;
+            padding: 0.875rem 1.25rem;
             display: flex;
             align-items: center;
             text-decoration: none;
             transition: all 0.3s ease;
             border-radius: 0;
+            position: relative;
+            font-weight: 500;
         }
 
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
             text-decoration: none;
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--white);
+            border-right: 4px solid #4fd1c7;
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #4fd1c7;
+            border-radius: 0 4px 4px 0;
         }
 
         .nav-link i {
             width: 20px;
             margin-right: 0.75rem;
             text-align: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
         }
 
+        .nav-link-text {
+            flex: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar.collapsed .nav-link-text {
+            opacity: 0;
+            width: 0;
+            margin: 0;
+        }
+
+        .nav-link .badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .sidebar.collapsed .nav-link .badge {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            transform: scale(0.8);
+        }
+
+        /* Dropdown Styles */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-toggle {
+            cursor: pointer;
+        }
+
+        .nav-dropdown-toggle::after {
+            content: '\F285';
+            font-family: 'bootstrap-icons';
+            margin-left: auto;
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-dropdown-toggle.expanded::after {
+            transform: rotate(90deg);
+        }
+
+        .nav-dropdown-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-dropdown-menu.show {
+            max-height: 300px;
+        }
+
+        .nav-dropdown-item {
+            padding: 0.625rem 1.25rem 0.625rem 3.25rem;
+            color: var(--sidebar-text-muted);
+            display: block;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .nav-dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+            text-decoration: none;
+        }
+
+        .nav-dropdown-item.active {
+            color: #4fd1c7;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-dropdown-item.active::before {
+            content: '';
+            position: absolute;
+            left: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: #4fd1c7;
+            border-radius: 50%;
+        }
+
+        .sidebar.collapsed .nav-dropdown-menu {
+            display: none;
+        }
+
+        /* Main Content */
         .main-content {
-            margin-left: 250px;
-            transition: margin-left 0.3s ease;
+            margin-left: 280px;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
         }
 
         .main-content.sidebar-collapsed {
             margin-left: 70px;
         }
 
+        @media (max-width: 991.98px) {
+            .main-content, .main-content.sidebar-collapsed {
+                margin-left: 0;
+            }
+        }
+
+        /* Top Bar */
         .topbar {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-color);
             padding: 1rem 1.5rem;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .content-area {
-            padding: 1.5rem;
+        .topbar-left {
+            display: flex;
+            align-items: center;
         }
 
-        .card {
+        .sidebar-toggle {
+            background: none;
             border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+        }
+
+        .sidebar-toggle:hover {
+            background: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        /* Breadcrumbs */
+        .breadcrumb {
+            background: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item {
+            color: var(--text-muted);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: '\F285';
+            font-family: 'bootstrap-icons';
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--primary-dark);
+        }
+
+        /* User Dropdown */
+        .user-dropdown .dropdown-toggle {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            background: var(--white);
+            color: var(--text-color);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .user-dropdown .dropdown-toggle:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(13, 107, 104, 0.25);
+        }
+
+        .user-dropdown .dropdown-toggle::after {
+            margin-left: 0.5rem;
+        }
+
+        .user-dropdown .dropdown-menu {
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-lg);
+            padding: 0.5rem 0;
+            margin-top: 0.5rem;
+        }
+
+        .user-dropdown .dropdown-item {
+            padding: 0.625rem 1rem;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .user-dropdown .dropdown-item:hover {
+            background: #f8fafc;
+            color: var(--primary-color);
+        }
+
+        .user-dropdown .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 2rem 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
             margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
         }
 
         .card-header {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-color);
             font-weight: 600;
-            padding: 1rem 1.5rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px 12px 0 0;
         }
 
+        /* Stats Cards */
         .stats-card {
-            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
-            color: white;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: var(--white);
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 2rem 1.5rem;
             margin-bottom: 1.5rem;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover::before {
+            right: -40%;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-4px);
         }
 
         .stats-card.success {
@@ -146,183 +507,308 @@
             background: linear-gradient(135deg, var(--danger-color), #ef4444);
         }
 
+        .stats-card.info {
+            background: linear-gradient(135deg, var(--info-color), #06b6d4);
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            padding: 0.625rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
         .btn-primary {
             background: var(--primary-color);
-            border-color: var(--primary-color);
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
         }
 
         .btn-outline-primary {
             color: var(--primary-color);
-            border-color: var(--primary-color);
-            border-radius: 8px;
+            border: 1px solid var(--primary-color);
+            background: transparent;
         }
 
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        /* Tables */
         .table {
-            background: white;
-            border-radius: 8px;
+            background: var(--white);
+            border-radius: 12px;
             overflow: hidden;
+            box-shadow: var(--shadow);
         }
 
         .table thead th {
             border-top: none;
             background: #f8fafc;
             font-weight: 600;
-            color: #374151;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem;
         }
 
+        .table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            color: var(--text-color);
+        }
+
+        .table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Badges */
         .badge {
             font-weight: 500;
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-        }
-
-        .sidebar-toggle {
-            background: none;
-            border: none;
-            color: #64748b;
-            font-size: 1.2rem;
-            padding: 0.5rem;
-            border-radius: 6px;
-        }
-
-        .sidebar-toggle:hover {
-            background: #f1f5f9;
-            color: #374151;
-        }
-
-        .breadcrumb {
-            background: none;
-            padding: 0;
-            margin: 0 0 1rem 0;
-        }
-
-        .breadcrumb-item + .breadcrumb-item::before {
-            content: "›";
-            color: #94a3b8;
-        }
-
-        .alert {
+            padding: 0.5rem 0.75rem;
             border-radius: 8px;
-            border: none;
+            font-size: 0.8rem;
         }
 
+        /* Alerts */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert i {
+            margin-right: 0.5rem;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .sidebar {
+            .content-area {
+                padding: 1rem;
+            }
+
+            .topbar {
+                padding: 1rem;
+            }
+
+            .stats-card {
+                padding: 1.5rem 1rem;
+            }
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
                 transform: translateX(-100%);
             }
-            
-            .sidebar.mobile-open {
+            to {
                 transform: translateX(0);
             }
-            
-            .main-content {
-                margin-left: 0;
-            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
         }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <a href="{% url 'admin_dashboard' %}" class="sidebar-brand">
-            <i class="fas fa-compass me-2"></i>
+            <i class="bi bi-compass"></i>
             <span class="brand-text">Travel Kenya</span>
         </a>
         
         <nav class="sidebar-nav">
-            <div class="nav-item">
-                <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
+            <!-- Main Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                
+                <div class="nav-item">
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer2"></i>
+                        <span class="nav-link-text">Dashboard</span>
+                    </a>
+                </div>
+
+                <div class="nav-item">
+                    <a href="{% url 'admin_analytics' %}" class="nav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-graph-up"></i>
+                        <span class="nav-link-text">Analytics</span>
+                    </a>
+                </div>
             </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_events_list' %}" class="nav-link {% if 'events' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Events</span>
-                </a>
+
+            <!-- Content Management -->
+            <div class="nav-section">
+                <div class="nav-section-title">Content</div>
+                
+                <!-- Events Dropdown -->
+                <div class="nav-item nav-dropdown">
+                    <a class="nav-link nav-dropdown-toggle {% if 'events' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#eventsDropdown">
+                        <i class="bi bi-calendar-event"></i>
+                        <span class="nav-link-text">Events</span>
+                    </a>
+                    <div class="nav-dropdown-menu" id="eventsDropdown">
+                        <a href="{% url 'admin_events_list' %}" class="nav-dropdown-item">All Events</a>
+                        <a href="#" class="nav-dropdown-item">Add Event</a>
+                        <a href="#" class="nav-dropdown-item">Event Categories</a>
+                    </div>
+                </div>
+
+                <div class="nav-item">
+                    <a href="{% url 'admin_categories_list' %}" class="nav-link {% if 'categor' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-tags"></i>
+                        <span class="nav-link-text">Categories</span>
+                    </a>
+                </div>
+
+                <div class="nav-item">
+                    <a href="{% url 'admin_locations_list' %}" class="nav-link {% if 'location' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-geo-alt"></i>
+                        <span class="nav-link-text">Locations</span>
+                    </a>
+                </div>
             </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_bookings_list' %}" class="nav-link {% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-ticket-alt"></i>
-                    <span>Bookings</span>
-                </a>
+
+            <!-- Bookings & Payments -->
+            <div class="nav-section">
+                <div class="nav-section-title">Sales</div>
+                
+                <!-- Bookings Dropdown -->
+                <div class="nav-item nav-dropdown">
+                    <a class="nav-link nav-dropdown-toggle {% if 'booking' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#bookingsDropdown">
+                        <i class="bi bi-ticket-perforated"></i>
+                        <span class="nav-link-text">Bookings</span>
+                    </a>
+                    <div class="nav-dropdown-menu" id="bookingsDropdown">
+                        <a href="{% url 'admin_bookings_list' %}" class="nav-dropdown-item">All Bookings</a>
+                        <a href="#" class="nav-dropdown-item">Pending Bookings</a>
+                        <a href="#" class="nav-dropdown-item">Confirmed Bookings</a>
+                        <a href="#" class="nav-dropdown-item">Cancelled Bookings</a>
+                    </div>
+                </div>
+
+                <!-- Payments Dropdown -->
+                <div class="nav-item nav-dropdown">
+                    <a class="nav-link nav-dropdown-toggle {% if 'payment' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#paymentsDropdown">
+                        <i class="bi bi-credit-card"></i>
+                        <span class="nav-link-text">Payments</span>
+                    </a>
+                    <div class="nav-dropdown-menu" id="paymentsDropdown">
+                        <a href="{% url 'admin_payments_list' %}" class="nav-dropdown-item">All Payments</a>
+                        <a href="#" class="nav-dropdown-item">Successful Payments</a>
+                        <a href="#" class="nav-dropdown-item">Failed Payments</a>
+                        <a href="#" class="nav-dropdown-item">Refunds</a>
+                    </div>
+                </div>
+
+                <div class="nav-item">
+                    <a href="{% url 'admin_whatsapp_bookings' %}" class="nav-link {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-whatsapp"></i>
+                        <span class="nav-link-text">WhatsApp</span>
+                        {% if pending_whatsapp > 0 %}
+                        <span class="badge bg-warning">{{ pending_whatsapp }}</span>
+                        {% endif %}
+                    </a>
+                </div>
             </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_payments_list' %}" class="nav-link {% if 'payment' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Payments</span>
-                </a>
+
+            <!-- Customer Service -->
+            <div class="nav-section">
+                <div class="nav-section-title">Customer Service</div>
+                
+                <div class="nav-item">
+                    <a href="{% url 'admin_reviews_list' %}" class="nav-link {% if 'review' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-star"></i>
+                        <span class="nav-link-text">Reviews</span>
+                    </a>
+                </div>
+
+                <div class="nav-item">
+                    <a href="{% url 'admin_inquiries_list' %}" class="nav-link {% if 'inquir' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-envelope"></i>
+                        <span class="nav-link-text">Inquiries</span>
+                        {% if unresolved_inquiries > 0 %}
+                        <span class="badge bg-danger">{{ unresolved_inquiries }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+
+                <div class="nav-item">
+                    <a href="{% url 'admin_newsletter_subscribers' %}" class="nav-link {% if 'newsletter' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-newspaper"></i>
+                        <span class="nav-link-text">Newsletter</span>
+                    </a>
+                </div>
             </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_whatsapp_bookings' %}" class="nav-link {% if 'whatsapp' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fab fa-whatsapp"></i>
-                    <span>WhatsApp</span>
-                    {% if pending_whatsapp > 0 %}
-                    <span class="badge bg-warning ms-auto">{{ pending_whatsapp }}</span>
-                    {% endif %}
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_reviews_list' %}" class="nav-link {% if 'review' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-star"></i>
-                    <span>Reviews</span>
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_inquiries_list' %}" class="nav-link {% if 'inquir' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-envelope"></i>
-                    <span>Inquiries</span>
-                    {% if unresolved_inquiries > 0 %}
-                    <span class="badge bg-danger ms-auto">{{ unresolved_inquiries }}</span>
-                    {% endif %}
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_categories_list' %}" class="nav-link {% if 'categor' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-tags"></i>
-                    <span>Categories</span>
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_locations_list' %}" class="nav-link {% if 'location' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>Locations</span>
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_newsletter_subscribers' %}" class="nav-link {% if 'newsletter' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-newspaper"></i>
-                    <span>Newsletter</span>
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_analytics' %}" class="nav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Analytics</span>
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{% url 'admin_settings' %}" class="nav-link {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
+
+            <!-- System -->
+            <div class="nav-section">
+                <div class="nav-section-title">System</div>
+                
+                <!-- Settings Dropdown -->
+                <div class="nav-item nav-dropdown">
+                    <a class="nav-link nav-dropdown-toggle {% if 'settings' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#settingsDropdown">
+                        <i class="bi bi-gear"></i>
+                        <span class="nav-link-text">Settings</span>
+                    </a>
+                    <div class="nav-dropdown-menu" id="settingsDropdown">
+                        <a href="{% url 'admin_settings' %}" class="nav-dropdown-item">General Settings</a>
+                        <a href="#" class="nav-dropdown-item">Email Settings</a>
+                        <a href="#" class="nav-dropdown-item">Payment Settings</a>
+                        <a href="#" class="nav-dropdown-item">User Management</a>
+                    </div>
+                </div>
             </div>
         </nav>
     </div>
@@ -331,9 +817,9 @@
     <div class="main-content" id="main-content">
         <!-- Top Bar -->
         <div class="topbar">
-            <div class="d-flex align-items-center">
-                <button class="sidebar-toggle me-3" id="sidebar-toggle">
-                    <i class="fas fa-bars"></i>
+            <div class="topbar-left">
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="bi bi-list"></i>
                 </button>
                 
                 {% block breadcrumbs %}
@@ -347,14 +833,34 @@
             </div>
             
             <div class="d-flex align-items-center">
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user me-2"></i>{{ user.get_full_name|default:user.username }}
+                <!-- Notifications -->
+                <div class="dropdown me-3">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell"></i>
+                        <span class="badge bg-danger rounded-pill">3</span>
                     </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><h6 class="dropdown-header">Notifications</h6></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-info-circle me-2"></i>New booking received</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-exclamation-triangle me-2"></i>Payment failed</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-star me-2"></i>New review posted</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'admin_logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        <li><a class="dropdown-item text-center" href="#">View all notifications</a></li>
+                    </ul>
+                </div>
+
+                <!-- User Dropdown -->
+                <div class="dropdown user-dropdown">
+                    <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <span>{{ user.get_full_name|default:user.username }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Account Settings</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-question-circle me-2"></i>Help & Support</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'admin_logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
                     </ul>
                 </div>
             </div>
@@ -365,55 +871,343 @@
             <!-- Messages -->
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show fade-in" role="alert">
+                        <i class="bi {% if message.tags == 'success' %}bi-check-circle{% elif message.tags == 'error' %}bi-exclamation-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i>
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endif %}
 
             {% block content %}
-            <!-- Page content goes here -->
+            
             {% endblock %}
         </div>
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Sidebar toggle functionality
-        document.getElementById('sidebar-toggle').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content');
-            
-            sidebar.classList.toggle('collapsed');
-            mainContent.classList.toggle('sidebar-collapsed');
-        });
+        class AdminDashboard {
+            constructor() {
+                this.sidebar = document.getElementById('sidebar');
+                this.sidebarOverlay = document.getElementById('sidebar-overlay');
+                this.mainContent = document.getElementById('main-content');
+                this.sidebarToggle = document.getElementById('sidebar-toggle');
+                
+                this.init();
+            }
 
-        // Mobile sidebar toggle
-        function toggleMobileSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('mobile-open');
+            init() {
+                this.bindEvents();
+                this.initializeDropdowns();
+                this.handleResponsive();
+                this.initializeTooltips();
+                this.autoHideAlerts();
+            }
+
+            bindEvents() {
+                // Sidebar toggle
+                this.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+                
+                // Sidebar overlay click
+                this.sidebarOverlay.addEventListener('click', () => this.closeMobileSidebar());
+                
+                // Window resize
+                window.addEventListener('resize', () => this.handleResponsive());
+                
+                // Dropdown toggles
+                document.querySelectorAll('.nav-dropdown-toggle').forEach(toggle => {
+                    toggle.addEventListener('click', (e) => this.handleDropdownToggle(e));
+                });
+
+                // ESC key to close mobile sidebar
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.isMobileView()) {
+                        this.closeMobileSidebar();
+                    }
+                });
+            }
+
+            toggleSidebar() {
+                if (this.isMobileView()) {
+                    this.toggleMobileSidebar();
+                } else {
+                    this.toggleDesktopSidebar();
+                }
+            }
+
+            toggleMobileSidebar() {
+                const isOpen = this.sidebar.classList.contains('show');
+                
+                if (isOpen) {
+                    this.closeMobileSidebar();
+                } else {
+                    this.openMobileSidebar();
+                }
+            }
+
+            openMobileSidebar() {
+                this.sidebar.classList.add('show', 'slide-in');
+                this.sidebarOverlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                
+                // Remove animation class after animation completes
+                setTimeout(() => {
+                    this.sidebar.classList.remove('slide-in');
+                }, 300);
+            }
+
+            closeMobileSidebar() {
+                this.sidebar.classList.remove('show');
+                this.sidebarOverlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+
+            toggleDesktopSidebar() {
+                this.sidebar.classList.toggle('collapsed');
+                this.mainContent.classList.toggle('sidebar-collapsed');
+                
+                // Store preference
+                localStorage.setItem('sidebar-collapsed', this.sidebar.classList.contains('collapsed'));
+            }
+
+            handleDropdownToggle(e) {
+                e.preventDefault();
+                
+                const toggle = e.currentTarget;
+                const targetId = toggle.getAttribute('data-bs-target');
+                const menu = document.querySelector(targetId);
+                
+                if (!menu) return;
+
+                const isExpanded = menu.classList.contains('show');
+                
+                // Close other dropdowns
+                document.querySelectorAll('.nav-dropdown-menu.show').forEach(openMenu => {
+                    if (openMenu !== menu) {
+                        openMenu.classList.remove('show');
+                        const openToggle = document.querySelector(`[data-bs-target="#${openMenu.id}"]`);
+                        if (openToggle) {
+                            openToggle.classList.remove('expanded');
+                        }
+                    }
+                });
+
+                // Toggle current dropdown
+                if (isExpanded) {
+                    menu.classList.remove('show');
+                    toggle.classList.remove('expanded');
+                } else {
+                    menu.classList.add('show');
+                    toggle.classList.add('expanded');
+                }
+            }
+
+            handleResponsive() {
+                const wasMobile = this.isMobileView();
+                
+                if (wasMobile) {
+                    // Close mobile sidebar if open
+                    this.closeMobileSidebar();
+                } else {
+                    // Restore desktop sidebar state
+                    const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+                    if (isCollapsed) {
+                        this.sidebar.classList.add('collapsed');
+                        this.mainContent.classList.add('sidebar-collapsed');
+                    } else {
+                        this.sidebar.classList.remove('collapsed');
+                        this.mainContent.classList.remove('sidebar-collapsed');
+                    }
+                }
+            }
+
+            isMobileView() {
+                return window.innerWidth < 992;
+            }
+
+            initializeDropdowns() {
+                // Open active dropdown on page load
+                const activeLink = document.querySelector('.nav-link.active');
+                if (activeLink && activeLink.closest('.nav-dropdown')) {
+                    const dropdown = activeLink.closest('.nav-dropdown');
+                    const toggle = dropdown.querySelector('.nav-dropdown-toggle');
+                    const menu = dropdown.querySelector('.nav-dropdown-menu');
+                    
+                    if (toggle && menu) {
+                        toggle.classList.add('expanded');
+                        menu.classList.add('show');
+                    }
+                }
+
+                // Set active state for dropdown items
+                const currentPath = window.location.pathname;
+                document.querySelectorAll('.nav-dropdown-item').forEach(item => {
+                    if (item.getAttribute('href') === currentPath) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+
+            initializeTooltips() {
+                // Initialize Bootstrap tooltips
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // Add tooltips to collapsed sidebar items
+                if (this.sidebar.classList.contains('collapsed')) {
+                    this.addCollapsedTooltips();
+                }
+
+                // Listen for sidebar collapse changes
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.attributeName === 'class') {
+                            if (this.sidebar.classList.contains('collapsed')) {
+                                this.addCollapsedTooltips();
+                            } else {
+                                this.removeCollapsedTooltips();
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(this.sidebar, { attributes: true });
+            }
+
+            addCollapsedTooltips() {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    const text = link.querySelector('.nav-link-text');
+                    if (text && !link.getAttribute('data-bs-toggle')) {
+                        link.setAttribute('data-bs-toggle', 'tooltip');
+                        link.setAttribute('data-bs-placement', 'right');
+                        link.setAttribute('title', text.textContent.trim());
+                        new bootstrap.Tooltip(link);
+                    }
+                });
+            }
+
+            removeCollapsedTooltips() {
+                document.querySelectorAll('.nav-link[data-bs-toggle="tooltip"]').forEach(link => {
+                    const tooltip = bootstrap.Tooltip.getInstance(link);
+                    if (tooltip) {
+                        tooltip.dispose();
+                    }
+                    link.removeAttribute('data-bs-toggle');
+                    link.removeAttribute('data-bs-placement');
+                    link.removeAttribute('title');
+                });
+            }
+
+            autoHideAlerts() {
+                setTimeout(() => {
+                    const alerts = document.querySelectorAll('.alert');
+                    alerts.forEach(alert => {
+                        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                        if (bsAlert) {
+                            bsAlert.close();
+                        }
+                    });
+                }, 5000);
+            }
+
+            // Utility methods
+            showNotification(message, type = 'info') {
+                const alertContainer = document.createElement('div');
+                alertContainer.className = `alert alert-${type} alert-dismissible fade show fade-in`;
+                alertContainer.innerHTML = `
+                    <i class="bi bi-info-circle"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                const contentArea = document.querySelector('.content-area');
+                contentArea.insertBefore(alertContainer, contentArea.firstChild);
+
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    const alert = bootstrap.Alert.getOrCreateInstance(alertContainer);
+                    if (alert) {
+                        alert.close();
+                    }
+                }, 5000);
+            }
+
+            // Loading state management
+            setLoadingState(element, loading = true) {
+                if (loading) {
+                    element.disabled = true;
+                    const spinner = document.createElement('span');
+                    spinner.className = 'spinner-border spinner-border-sm me-2';
+                    spinner.setAttribute('role', 'status');
+                    element.insertBefore(spinner, element.firstChild);
+                } else {
+                    element.disabled = false;
+                    const spinner = element.querySelector('.spinner-border');
+                    if (spinner) {
+                        spinner.remove();
+                    }
+                }
+            }
         }
 
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
+        // Initialize the dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.adminDashboard = new AdminDashboard();
+        });
 
-        // Initialize tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add loading animation to form submissions
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn && window.adminDashboard) {
+                    window.adminDashboard.setLoadingState(submitBtn, true);
+                }
+            });
+        });
+
+        // Enhanced table interactions
+        document.querySelectorAll('.table tbody tr').forEach(row => {
+            row.addEventListener('click', function() {
+                // Remove active class from all rows
+                document.querySelectorAll('.table tbody tr').forEach(r => r.classList.remove('table-active'));
+                // Add active class to clicked row
+                this.classList.add('table-active');
+            });
+        });
+
+        // Add fade-in animation to dynamically loaded content
+        function animateNewContent(element) {
+            element.classList.add('fade-in');
+        }
+
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            if (window.adminDashboard) {
+                window.adminDashboard.showNotification('An error occurred. Please try again.', 'danger');
+            }
         });
     </script>
     
     {% block extra_js %}{% endblock %}
+
 </body>
 </html>

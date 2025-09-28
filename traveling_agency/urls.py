@@ -37,7 +37,7 @@ urlpatterns = [
     # admin views
     # Dashboard
     # Authentication URLs
-    path('login/', views.admin_login_view, name='login'),
+    path('login/', views.admin_login_view, name='admin_login'),
     path('logout/', views.admin_logout_view, name='admin_logout'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
 
