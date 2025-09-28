@@ -440,77 +440,7 @@
             padding: 2rem 1.5rem;
         }
 
-        /* Cards */
-        .card {
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
-        }
-
-        .card-header {
-            background: var(--white);
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            padding: 1.25rem 1.5rem;
-            border-radius: 12px 12px 0 0;
-        }
-
-        /* Stats Cards */
-        .stats-card {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-            color: var(--white);
-            border-radius: 12px;
-            padding: 2rem 1.5rem;
-            margin-bottom: 1.5rem;
-            border: none;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }
-
-        .stats-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 200%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: rotate(45deg);
-            transition: all 0.3s ease;
-        }
-
-        .stats-card:hover::before {
-            right: -40%;
-        }
-
-        .stats-card:hover {
-            transform: translateY(-4px);
-        }
-
-        .stats-card.success {
-            background: linear-gradient(135deg, var(--success-color), #10b981);
-        }
-
-        .stats-card.warning {
-            background: linear-gradient(135deg, var(--warning-color), #f59e0b);
-        }
-
-        .stats-card.danger {
-            background: linear-gradient(135deg, var(--danger-color), #ef4444);
-        }
-
-        .stats-card.info {
-            background: linear-gradient(135deg, var(--info-color), #06b6d4);
-        }
-
+        
         /* Buttons */
         .btn {
             border-radius: 8px;

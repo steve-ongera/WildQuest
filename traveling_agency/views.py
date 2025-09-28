@@ -917,66 +917,225 @@ def admin_required(user):
     return user.is_staff or user.is_superuser
 
 
+from django.shortcuts import render
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Sum, Count, Avg, Q
+from django.utils import timezone
+from datetime import timedelta, date
+import json
+from decimal import Decimal
+
+from .models import (
+    Event, Booking, Payment, Category, Location, 
+    WhatsAppBooking, ContactInquiry, Review
+)
+
 @staff_member_required
 def admin_dashboard(request):
-    """Main admin dashboard with key metrics"""
+    """
+    Comprehensive admin dashboard with advanced analytics and visualizations
+    """
     # Date ranges for analytics
     today = timezone.now().date()
     last_30_days = today - timedelta(days=30)
     last_7_days = today - timedelta(days=7)
+    last_365_days = today - timedelta(days=365)
+    current_month_start = today.replace(day=1)
     
-    # Key metrics
+    # Basic metrics
     total_events = Event.objects.count()
     active_events = Event.objects.filter(status='published').count()
+    draft_events = Event.objects.filter(status='draft').count()
     total_bookings = Booking.objects.count()
     pending_bookings = Booking.objects.filter(status='pending').count()
+    confirmed_bookings = Booking.objects.filter(status='confirmed').count()
+    paid_bookings = Booking.objects.filter(status='paid').count()
     
     # Revenue metrics
     total_revenue = Payment.objects.filter(status='completed').aggregate(
         total=Sum('amount')
-    )['total'] or 0
+    )['total'] or Decimal('0.00')
     
     revenue_30_days = Payment.objects.filter(
         status='completed',
         completed_at__gte=last_30_days
-    ).aggregate(total=Sum('amount'))['total'] or 0
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     
-    # Recent activity
-    recent_bookings = Booking.objects.select_related('event').order_by('-booked_at')[:10]
-    recent_payments = Payment.objects.select_related('booking__event').order_by('-initiated_at')[:10]
-    pending_whatsapp = WhatsAppBooking.objects.filter(status='new').count()
-    unresolved_inquiries = ContactInquiry.objects.filter(is_resolved=False).count()
+    revenue_7_days = Payment.objects.filter(
+        status='completed',
+        completed_at__gte=last_7_days
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     
-    # Chart data for bookings over time
-    booking_chart_data = []
-    for i in range(30, 0, -1):
-        date = today - timedelta(days=i)
-        bookings_count = Booking.objects.filter(booked_at__date=date).count()
-        booking_chart_data.append({
-            'date': date.strftime('%Y-%m-%d'),
-            'bookings': bookings_count
+    # Average booking value
+    avg_booking_value = Payment.objects.filter(status='completed').aggregate(
+        avg=Avg('amount')
+    )['avg'] or Decimal('0.00')
+    
+    # Booking status distribution for donut chart
+    booking_status_data = []
+    status_counts = Booking.objects.values('status').annotate(count=Count('id'))
+    for status in status_counts:
+        booking_status_data.append({
+            'status': status['status'].title(),
+            'count': status['count']
         })
     
-    # Popular events
-    popular_events = Event.objects.annotate(
-        booking_count=Count('booking')
-    ).order_by('-booking_count')[:5]
+    # Payment methods distribution
+    payment_methods_data = []
+    payment_methods = Payment.objects.filter(status='completed').values('payment_method').annotate(
+        count=Count('id'),
+        total=Sum('amount')
+    )
+    for method in payment_methods:
+        payment_methods_data.append({
+            'method': method['payment_method'].replace('_', ' ').title(),
+            'count': method['count'],
+            'total': float(method['total'])
+        })
+    
+    # Monthly revenue for line chart (last 12 months)
+    monthly_revenue_data = []
+    for i in range(11, -1, -1):
+        month_date = today - timedelta(days=30*i)
+        month_start = month_date.replace(day=1)
+        if i == 0:
+            month_end = today
+        else:
+            next_month = month_start.replace(month=month_start.month + 1) if month_start.month < 12 else month_start.replace(year=month_start.year + 1, month=1)
+            month_end = next_month - timedelta(days=1)
+        
+        revenue = Payment.objects.filter(
+            status='completed',
+            completed_at__date__range=[month_start, month_end]
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        bookings = Booking.objects.filter(
+            booked_at__date__range=[month_start, month_end]
+        ).count()
+        
+        monthly_revenue_data.append({
+            'month': month_start.strftime('%b %Y'),
+            'revenue': float(revenue),
+            'bookings': bookings
+        })
+    
+    # Event categories performance for bar chart
+    category_performance = []
+    categories = Category.objects.annotate(
+        event_count=Count('event'),
+        booking_count=Count('event__booking'),
+        total_revenue=Sum('event__booking__payments__amount', 
+                         filter=Q(event__booking__payments__status='completed'))
+    ).order_by('-booking_count')[:8]
+    
+    for category in categories:
+        category_performance.append({
+            'name': category.name,
+            'events': category.event_count,
+            'bookings': category.booking_count,
+            'revenue': float(category.total_revenue or 0)
+        })
+    
+    # Daily bookings for the last 30 days (area chart)
+    daily_bookings_data = []
+    for i in range(29, -1, -1):
+        date_point = today - timedelta(days=i)
+        bookings_count = Booking.objects.filter(booked_at__date=date_point).count()
+        revenue_day = Payment.objects.filter(
+            status='completed',
+            completed_at__date=date_point
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        daily_bookings_data.append({
+            'date': date_point.strftime('%Y-%m-%d'),
+            'day': date_point.strftime('%d'),
+            'bookings': bookings_count,
+            'revenue': float(revenue_day)
+        })
+    
+    # Top performing events
+    top_events = Event.objects.annotate(
+        booking_count=Count('booking'),
+        total_revenue=Sum('booking__payments__amount',
+                         filter=Q(booking__payments__status='completed'))
+    ).filter(booking_count__gt=0).order_by('-booking_count')[:5]
+    
+    # Popular locations
+    popular_locations = Location.objects.annotate(
+        event_count=Count('event'),
+        booking_count=Count('event__booking')
+    ).filter(event_count__gt=0).order_by('-booking_count')[:5]
+    
+    # Recent activity
+    recent_bookings = Booking.objects.select_related(
+        'event', 'event__location'
+    ).order_by('-booked_at')[:8]
+    
+    recent_payments = Payment.objects.select_related(
+        'booking__event'
+    ).order_by('-initiated_at')[:8]
+    
+    # Customer analytics
+    total_customers = Booking.objects.values('customer_email').distinct().count()
+    repeat_customers = Booking.objects.values('customer_email').annotate(
+        booking_count=Count('id')
+    ).filter(booking_count__gt=1).count()
+    
+    # System alerts
+    pending_whatsapp = WhatsAppBooking.objects.filter(status='new').count()
+    unresolved_inquiries = ContactInquiry.objects.filter(is_resolved=False).count()
+    expiring_events = Event.objects.filter(
+        booking_deadline__lte=timezone.now() + timedelta(days=7),
+        booking_deadline__gte=timezone.now(),
+        status='published'
+    ).count()
+    
+    # Reviews analytics
+    avg_rating = Review.objects.filter(is_approved=True).aggregate(
+        avg=Avg('rating')
+    )['avg'] or 0
+    total_reviews = Review.objects.filter(is_approved=True).count()
     
     context = {
+        # Basic metrics
         'total_events': total_events,
         'active_events': active_events,
+        'draft_events': draft_events,
         'total_bookings': total_bookings,
         'pending_bookings': pending_bookings,
+        'confirmed_bookings': confirmed_bookings,
+        'paid_bookings': paid_bookings,
+        
+        # Revenue metrics
         'total_revenue': total_revenue,
         'revenue_30_days': revenue_30_days,
+        'revenue_7_days': revenue_7_days,
+        'avg_booking_value': avg_booking_value,
+        
+        # Customer metrics
+        'total_customers': total_customers,
+        'repeat_customers': repeat_customers,
+        'avg_rating': round(avg_rating, 1),
+        'total_reviews': total_reviews,
+        
+        # Chart data (JSON serialized)
+        'booking_status_data': json.dumps(booking_status_data),
+        'payment_methods_data': json.dumps(payment_methods_data),
+        'monthly_revenue_data': json.dumps(monthly_revenue_data),
+        'category_performance_data': json.dumps(category_performance),
+        'daily_bookings_data': json.dumps(daily_bookings_data),
+        
+        # Lists for tables
+        'top_events': top_events,
+        'popular_locations': popular_locations,
         'recent_bookings': recent_bookings,
         'recent_payments': recent_payments,
+        
+        # System alerts
         'pending_whatsapp': pending_whatsapp,
         'unresolved_inquiries': unresolved_inquiries,
-        'booking_chart_data': json.dumps(booking_chart_data),
-        'popular_events': popular_events,
+        'expiring_events': expiring_events,
     }
-    
     return render(request, 'admin/dashboard.html', context)
 
 
