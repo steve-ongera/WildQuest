@@ -17,7 +17,7 @@
             <div class="col-lg-6 animated slideInRight">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb justify-content-center justify-content-lg-end mb-0">
-                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'home' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'index' %}">Home</a></li>
                         <li class="breadcrumb-item"><a class="text-primary" href="{% url 'events_list' %}">Events</a></li>
                         <li class="breadcrumb-item text-secondary active" aria-current="page">{{ category.name }}</li>
                     </ol>
@@ -66,7 +66,7 @@
                             {% for image in event.images.all %}
                                 {% if image.is_primary %}
                                     <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.alt_text }}" style="height: 250px; object-fit: cover;">
-                                    {% break %}
+                               
                                 {% endif %}
                             {% endfor %}
                         {% else %}
