@@ -23,26 +23,43 @@ from .forms import BookingForm, ContactForm, ReviewForm, NewsletterForm
 
 def index(request):
     """Homepage view"""
-    featured_events = Event.objects.filter(
-        status='published', 
-        featured=True,
-        start_date__gte=timezone.now()
-    ).select_related('category', 'location').prefetch_related('images')[:6]
-    
+    # First get featured events
+    featured_events = list(
+        Event.objects.filter(
+            status='published',
+            featured=True,
+            start_date__gte=timezone.now()
+        )
+        .select_related('category', 'location')
+        .prefetch_related('images')[:6]
+    )
+
+    # If fewer than 6, add extra published events to fill
+    if len(featured_events) < 6:
+        extra_needed = 6 - len(featured_events)
+        extra_events = Event.objects.filter(
+            status='published',
+            start_date__gte=timezone.now()
+        ).exclude(id__in=[e.id for e in featured_events]) \
+         .select_related('category', 'location') \
+         .prefetch_related('images')[:extra_needed]
+        featured_events.extend(extra_events)
+
     popular_categories = Category.objects.filter(is_active=True).annotate(
         event_count=Count('event')
     ).order_by('-event_count')[:6]
-    
+
     recent_reviews = Review.objects.filter(
         is_approved=True
     ).select_related('event').order_by('-created_at')[:6]
-    
+
     context = {
         'featured_events': featured_events,
         'popular_categories': popular_categories,
         'recent_reviews': recent_reviews,
     }
     return render(request, 'wildquest/index.html', context)
+
 
 def about(request):
     """About page view"""
