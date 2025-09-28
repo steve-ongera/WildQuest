@@ -10,19 +10,59 @@
         <div class="row g-3 align-items-center">
             <div class="col-lg-8 text-center text-lg-start">
                 <h1 class="display-4 mb-0 animated slideInLeft">Booking Details</h1>
-                <p class="text-light mt-2">Booking ID: {{ booking.booking_id }}</p>
+                <p class="text-dark mt-2">Booking ID: {{ booking.booking_id }}</p>
             </div>
             <div class="col-lg-4 animated slideInRight">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb justify-content-center justify-content-lg-end mb-0">
-                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'home' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'index' %}">Home</a></li>
                         <li class="breadcrumb-item"><a class="text-primary" href="{% url 'events_list' %}">Events</a></li>
                         <li class="breadcrumb-item text-secondary active" aria-current="page">Booking</li>
                     </ol>
                 </nav>
             </div>
         </div>
-        
+    </div>
+</div>
+<!-- Hero End -->
+
+<!-- Status Alert -->
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            {% if booking.status == 'pending' %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fa fa-clock me-2"></i><strong>Booking Pending:</strong> Your booking is awaiting confirmation. You will receive an update within 24 hours.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% elif booking.status == 'confirmed' %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fa fa-check-circle me-2"></i><strong>Booking Confirmed:</strong> Your booking has been confirmed. Please proceed with payment to secure your spot.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% elif booking.status == 'paid' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa fa-check-circle me-2"></i><strong>Payment Complete:</strong> Your booking is fully confirmed and paid. See you on the adventure!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% elif booking.status == 'cancelled' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa fa-times-circle me-2"></i><strong>Booking Cancelled:</strong> This booking has been cancelled.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% elif booking.status == 'completed' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa fa-flag-checkered me-2"></i><strong>Experience Complete:</strong> Thank you for choosing WildQuest Kenya! We hope you had an amazing time.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Booking Details Start -->
+<div class="container-fluid py-5">
+    <div class="container">
         <div class="row g-5">
             <!-- Main Content -->
             <div class="col-lg-8">
@@ -38,16 +78,19 @@
                             <p class="text-muted mb-2">
                                 <i class="fa fa-calendar me-2"></i>{{ booking.event.start_date|date:"M d, Y" }} - {{ booking.event.end_date|date:"M d, Y" }}
                             </p>
-                            <p class="text-muted mb-0">
+                            <p class="text-muted mb-2">
                                 <i class="fa fa-clock me-2"></i>{{ booking.event.duration_days }} day{{ booking.event.duration_days|pluralize }}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="fa fa-tag me-2"></i>{{ booking.event.category.name }}
                             </p>
                         </div>
                         <div class="col-md-4 text-end">
                             {% if booking.event.images.exists %}
                                 {% for image in booking.event.images.all %}
                                     {% if image.is_primary %}
-                                        <img src="{{ image.image.url }}" class="img-fluid rounded" alt="{{ image.alt_text }}" style="height: 100px; width: 100px; object-fit: cover;">
-                                        {% break %}
+                                        <img src="{{ image.image.url }}" class="img-fluid rounded" alt="{{ image.alt_text }}" style="height: 120px; width: 150px; object-fit: cover;">
+                                       
                                     {% endif %}
                                 {% endfor %}
                             {% endif %}
@@ -59,21 +102,18 @@
                 <div class="bg-light p-4 rounded mb-4">
                     <h4 class="mb-3">Customer Information</h4>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-12">
                             <h6>Contact Details</h6>
-                            <p class="mb-1"><strong>Name:</strong> {{ booking.customer_name }}</p>
-                            <p class="mb-1"><strong>Email:</strong> {{ booking.customer_email }}</p>
-                            <p class="mb-1"><strong>Phone:</strong> {{ booking.customer_phone }}</p>
-                            {% if booking.customer_address %}
-                            <p class="mb-0"><strong>Address:</strong> {{ booking.customer_address }}</p>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            {% if booking.emergency_contact_name %}
-                            <h6>Emergency Contact</h6>
-                            <p class="mb-1"><strong>Name:</strong> {{ booking.emergency_contact_name }}</p>
-                            <p class="mb-0"><strong>Phone:</strong> {{ booking.emergency_contact_phone }}</p>
-                            {% endif %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Name:</strong> {{ booking.customer_name }}</p>
+                                    <p class="mb-1"><strong>Email:</strong> {{ booking.customer_email }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Phone:</strong> {{ booking.customer_phone }}</p>
+                                    <p class="mb-1"><strong>Booking Method:</strong> {{ booking.get_booking_method_display }}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -87,8 +127,8 @@
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Age</th>
                                     <th>Type</th>
+                                    <th>Age</th>
                                     <th>ID/Passport</th>
                                 </tr>
                             </thead>
@@ -96,12 +136,12 @@
                                 {% for participant in booking.participants.all %}
                                 <tr>
                                     <td>{{ participant.name }}</td>
-                                    <td>{% if participant.age %}{{ participant.age }}{% else %}-{% endif %}</td>
                                     <td>
                                         <span class="badge {% if participant.participant_type == 'adult' %}bg-primary{% else %}bg-info{% endif %}">
                                             {{ participant.get_participant_type_display }}
                                         </span>
                                     </td>
+                                    <td>{% if participant.age %}{{ participant.age }}{% else %}-{% endif %}</td>
                                     <td>
                                         {% if participant.id_number %}{{ participant.id_number }}{% elif participant.passport_number %}{{ participant.passport_number }}{% else %}-{% endif %}
                                     </td>
@@ -120,13 +160,13 @@
                     {% if booking.dietary_requirements %}
                     <div class="mb-3">
                         <h6>Dietary Requirements</h6>
-                        <p>{{ booking.dietary_requirements }}</p>
+                        <p class="mb-0">{{ booking.dietary_requirements }}</p>
                     </div>
                     {% endif %}
                     {% if booking.special_requests %}
                     <div class="mb-3">
                         <h6>Special Requests</h6>
-                        <p>{{ booking.special_requests }}</p>
+                        <p class="mb-0">{{ booking.special_requests }}</p>
                     </div>
                     {% endif %}
                 </div>
@@ -170,6 +210,13 @@
                     </div>
                 </div>
                 {% endif %}
+                
+                <!-- Print Button -->
+                <div class="text-center mb-4">
+                    <button class="btn btn-outline-secondary" onclick="printBooking()">
+                        <i class="fas fa-print me-2"></i>Print Booking Details
+                    </button>
+                </div>
             </div>
             
             <!-- Sidebar -->
@@ -195,38 +242,39 @@
                     <!-- Booking Details -->
                     <div class="mb-3">
                         <h6>Booking Details</h6>
-                        <p class="mb-1"><strong>Booking ID:</strong> {{ booking.booking_id }}</p>
-                        <p class="mb-1"><strong>Booked on:</strong> {{ booking.booked_at|date:"M d, Y H:i" }}</p>
-                        <p class="mb-1"><strong>Method:</strong> {{ booking.get_booking_method_display }}</p>
-                        <p class="mb-0"><strong>Participants:</strong> {{ booking.number_of_participants }}</p>
+                        <p class="mb-1 small"><strong>Booking ID:</strong> {{ booking.booking_id }}</p>
+                        <p class="mb-1 small"><strong>Booked on:</strong> {{ booking.booked_at|date:"M d, Y H:i" }}</p>
+                        <p class="mb-1 small"><strong>Participants:</strong> {{ booking.number_of_participants }}</p>
+                        <p class="mb-0 small"><strong>Adults:</strong> {{ booking.adults_count }} | <strong>Children:</strong> {{ booking.children_count }}</p>
                     </div>
                     
                     <!-- Pricing Breakdown -->
                     <div class="mb-4">
-                        <h6>Pricing Breakdown</h6>
+                        <h6 class="border-bottom pb-2">Pricing Breakdown</h6>
+                        
                         {% if booking.pricing_tier %}
                         <div class="d-flex justify-content-between mb-2">
-                            <span>{{ booking.pricing_tier.name }}</span>
-                            <span></span>
+                            <span class="small">{{ booking.pricing_tier.name }}</span>
+                            <span class="small"></span>
                         </div>
                         {% endif %}
                         
                         <div class="d-flex justify-content-between mb-2">
-                            <span>Base Amount</span>
-                            <span>KES {{ booking.base_amount|floatformat:0 }}</span>
+                            <span class="small">Base Amount</span>
+                            <span class="small">KES {{ booking.base_amount|floatformat:0 }}</span>
                         </div>
                         
                         {% if booking.discount_amount > 0 %}
                         <div class="d-flex justify-content-between mb-2 text-success">
-                            <span>Discount</span>
-                            <span>-KES {{ booking.discount_amount|floatformat:0 }}</span>
+                            <span class="small">Discount</span>
+                            <span class="small">-KES {{ booking.discount_amount|floatformat:0 }}</span>
                         </div>
                         {% endif %}
                         
                         {% if booking.tax_amount > 0 %}
                         <div class="d-flex justify-content-between mb-2">
-                            <span>Tax</span>
-                            <span>KES {{ booking.tax_amount|floatformat:0 }}</span>
+                            <span class="small">Tax</span>
+                            <span class="small">KES {{ booking.tax_amount|floatformat:0 }}</span>
                         </div>
                         {% endif %}
                         
@@ -240,33 +288,48 @@
                     <!-- Action Buttons -->
                     <div class="d-grid gap-2">
                         {% if booking.status == 'confirmed' and booking.event.online_payment %}
-                        <button class="btn btn-primary">Make Payment</button>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-credit-card me-2"></i>Make Payment
+                        </button>
                         {% endif %}
                         
                         {% if booking.status in 'pending,confirmed' %}
-                        <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">Cancel Booking</button>
+                        <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="fas fa-times me-2"></i>Cancel Booking
+                        </button>
                         {% endif %}
                         
-                        <a href="{% url 'event_detail' slug=booking.event.slug %}" class="btn btn-outline-primary">View Event</a>
+                        <a href="{% url 'event_detail' slug=booking.event.slug %}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye me-2"></i>View Event
+                        </a>
                         
                         {% if booking.status == 'completed' %}
-                        <a href="{% url 'add_review' event_slug=booking.event.slug %}" class="btn btn-outline-success">Write Review</a>
+                        <a href="#" class="btn btn-outline-success">
+                            <i class="fas fa-star me-2"></i>Write Review
+                        </a>
                         {% endif %}
                     </div>
                     
                     <!-- Contact Support -->
                     <div class="mt-4 text-center border-top pt-3">
-                        <h6>Need Help?</h6>
-                        <p class="mb-2">
-                            <a href="tel:+254712345678" class="text-decoration-none">
-                                <i class="fa fa-phone"></i> +254 712 345 678
+                        <h6 class="small">Need Help?</h6>
+                        <p class="mb-2 small">
+                            <a href="tel:{{ contact_info.phone }}" class="text-decoration-none">
+                                <i class="fa fa-phone"></i> {{ contact_info.phone }}
                             </a>
                         </p>
-                        <p class="mb-0">
-                            <a href="mailto:info@wildquestkenya.com" class="text-decoration-none">
-                                <i class="fa fa-envelope"></i> info@wildquestkenya.com
+                        <p class="mb-2 small">
+                            <a href="mailto:{{ contact_info.email }}" class="text-decoration-none">
+                                <i class="fa fa-envelope"></i> {{ contact_info.email }}
                             </a>
                         </p>
+                        {% if contact_info.whatsapp %}
+                        <p class="mb-0 small">
+                            <a href="https://wa.me/{{ contact_info.whatsapp|cut:'+' }}" class="text-decoration-none" target="_blank">
+                                <i class="fab fa-whatsapp"></i> WhatsApp Support
+                            </a>
+                        </p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -287,7 +350,7 @@
                 <p>Are you sure you want to cancel this booking?</p>
                 <div class="alert alert-warning">
                     <strong>Cancellation Policy:</strong><br>
-                    {{ booking.event.cancellation_policy|truncatewords:30 }}
+                    {{ booking.event.cancellation_policy|truncatewords:50 }}
                 </div>
                 <div class="mb-3">
                     <label for="cancellationReason" class="form-label">Reason for Cancellation</label>
@@ -307,8 +370,31 @@ function cancelBooking() {
     const reason = document.getElementById('cancellationReason').value;
     
     if (confirm('This action cannot be undone. Are you sure you want to cancel?')) {
-        // Here you would typically make an AJAX call to cancel the booking
-        alert('Booking cancellation request has been submitted. You will receive a confirmation email shortly.');
+        // AJAX call to cancel the booking
+        fetch(`/bookings/{{ booking.booking_id }}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'reason': reason
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Booking cancellation request has been submitted. You will receive a confirmation email shortly.');
+                location.reload();
+            } else {
+                alert('Error cancelling booking: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error cancelling booking. Please try again or contact support.');
+            console.error('Error:', error);
+        });
+        
         bootstrap.Modal.getInstance(document.getElementById('cancelModal')).hide();
     }
 }
@@ -321,9 +407,16 @@ function printBooking() {
 // Add print styles
 const printStyles = `
     @media print {
-        .btn, .modal, nav, .breadcrumb { display: none !important; }
+        .btn, .modal, nav, .breadcrumb, .sticky-top { display: none !important; }
         .container-fluid { padding: 0 !important; }
         .hero-header { display: none !important; }
+        .alert { display: none !important; }
+        .col-lg-4 { display: none !important; }
+        .col-lg-8 { width: 100% !important; }
+        body { font-size: 12px !important; }
+        h4, h5, h6 { font-size: 14px !important; }
+        .table { font-size: 11px !important; }
+        .bg-light { background-color: #fff !important; border: 1px solid #ddd !important; }
     }
 `;
 
@@ -334,39 +427,3 @@ document.head.appendChild(styleSheet);
 </script>
 
 {% endblock %}
-    </div>
-</div>
-<!-- Hero End -->
-
-<!-- Booking Details Start -->
-<div class="container-fluid py-5">
-    <div class="container py-5">
-        <!-- Status Alert -->
-        <div class="row mb-4">
-            <div class="col-12">
-                {% if booking.status == 'pending' %}
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="fa fa-clock me-2"></i><strong>Booking Pending:</strong> Your booking is awaiting confirmation. You will receive an update within 24 hours.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% elif booking.status == 'confirmed' %}
-                <div class="alert alert-info alert-dismissible fade show" role="alert">
-                    <i class="fa fa-check-circle me-2"></i><strong>Booking Confirmed:</strong> Your booking has been confirmed. Please proceed with payment to secure your spot.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% elif booking.status == 'paid' %}
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fa fa-check-circle me-2"></i><strong>Payment Complete:</strong> Your booking is fully confirmed and paid. See you on the adventure!
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% elif booking.status == 'cancelled' %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fa fa-times-circle me-2"></i><strong>Booking Cancelled:</strong> This booking has been cancelled.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% elif booking.status == 'completed' %}
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fa fa-flag-checkered me-2"></i><strong>Experience Complete:</strong> Thank you for choosing WildQuest Kenya! We hope you had an amazing time.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endif %}

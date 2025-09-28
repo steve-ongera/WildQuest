@@ -185,8 +185,21 @@ def event_detail(request, slug):
     }
     return render(request, 'events/detail.html', context)
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.db import transaction
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.utils import timezone
+from .models import Event, Booking, BookingParticipant
+from .forms import BookingForm
+import logging
+
+# Set up logging for debugging
+logger = logging.getLogger(__name__)
+
 def booking_create(request, event_slug):
-    """Create a new booking"""
+    """Create a new booking with enhanced error handling"""
     event = get_object_or_404(Event, slug=event_slug, status='published')
     
     if not event.is_booking_open:
@@ -194,57 +207,111 @@ def booking_create(request, event_slug):
         return redirect('event_detail', slug=event_slug)
     
     if request.method == 'POST':
+        # Debug: Print POST data
+        logger.debug(f"POST data: {request.POST}")
+        
         form = BookingForm(request.POST, event=event)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.event = event
-            booking.user = request.user if request.user.is_authenticated else None
-            
-            # Calculate pricing
-            pricing_tier = form.cleaned_data.get('pricing_tier')
-            adults = form.cleaned_data['adults_count']
-            children = form.cleaned_data['children_count']
-            
-            if pricing_tier:
-                base_amount = pricing_tier.price * adults
-                if event.child_price and children > 0:
-                    base_amount += event.child_price * children
-            else:
-                base_amount = event.base_price * adults
-                if event.child_price and children > 0:
-                    base_amount += event.child_price * children
-            
-            # Apply group discount if applicable
-            total_participants = adults + children
-            if total_participants >= 5 and event.group_discount_percentage > 0:
-                discount_amount = base_amount * (event.group_discount_percentage / 100)
+        
+        # Debug: Check form validity and errors
+        if not form.is_valid():
+            logger.error(f"Form errors: {form.errors}")
+            messages.error(request, 'Please correct the errors below.')
+            context = {
+                'event': event,
+                'form': form,
+                'pricing_tiers': event.pricing_tiers.filter(is_active=True),
+            }
+            return render(request, 'bookings/create.html', context)
+        
+        try:
+            with transaction.atomic():
+                # Create booking
+                booking = form.save(commit=False)
+                booking.event = event
+                booking.user = request.user if request.user.is_authenticated else None
+                
+                # Calculate pricing
+                pricing_tier = form.cleaned_data.get('pricing_tier')
+                adults = form.cleaned_data['adults_count']
+                children = form.cleaned_data['children_count']
+                
+                logger.debug(f"Adults: {adults}, Children: {children}, Pricing tier: {pricing_tier}")
+                
+                if pricing_tier:
+                    base_amount = pricing_tier.price * adults
+                    if event.child_price and children > 0:
+                        base_amount += event.child_price * children
+                else:
+                    base_amount = event.base_price * adults
+                    if event.child_price and children > 0:
+                        base_amount += event.child_price * children
+                
+                # Apply group discount if applicable
+                total_participants = adults + children
+                discount_amount = 0
+                if total_participants >= 5 and event.group_discount_percentage > 0:
+                    discount_amount = base_amount * (event.group_discount_percentage / 100)
+                
+                booking.base_amount = base_amount
                 booking.discount_amount = discount_amount
-            
-            booking.base_amount = base_amount
-            booking.total_amount = base_amount - booking.discount_amount
-            booking.number_of_participants = total_participants
-            booking.save()
-            
-            # Create participants
-            participant_names = request.POST.getlist('participant_names[]')
-            participant_ages = request.POST.getlist('participant_ages[]')
-            participant_types = request.POST.getlist('participant_types[]')
-            
-            for i, name in enumerate(participant_names):
-                if name.strip():
-                    BookingParticipant.objects.create(
-                        booking=booking,
-                        name=name.strip(),
-                        age=participant_ages[i] if i < len(participant_ages) else None,
-                        participant_type=participant_types[i] if i < len(participant_types) else 'adult'
-                    )
-            
-            # Update event booking count
-            event.current_bookings += total_participants
-            event.save()
-            
-            messages.success(request, f'Booking created successfully! Your booking ID is {booking.booking_id}')
-            return redirect('booking_detail', booking_id=booking.booking_id)
+                booking.total_amount = base_amount - discount_amount
+                booking.number_of_participants = total_participants
+                
+                logger.debug(f"Booking amounts - Base: {base_amount}, Discount: {discount_amount}, Total: {booking.total_amount}")
+                
+                # Save booking first
+                booking.save()
+                logger.debug(f"Booking saved with ID: {booking.booking_id}")
+                
+                # Create participants
+                participant_names = request.POST.getlist('participant_names[]')
+                participant_ages = request.POST.getlist('participant_ages[]')
+                participant_types = request.POST.getlist('participant_types[]')
+                participant_ids = request.POST.getlist('participant_ids[]')
+                
+                logger.debug(f"Participant data - Names: {participant_names}, Ages: {participant_ages}, Types: {participant_types}")
+                
+                participants_created = 0
+                for i, name in enumerate(participant_names):
+                    if name and name.strip():
+                        age = None
+                        if i < len(participant_ages) and participant_ages[i]:
+                            try:
+                                age = int(participant_ages[i])
+                            except (ValueError, IndexError):
+                                age = None
+                        
+                        participant_type = participant_types[i] if i < len(participant_types) else 'adult'
+                        id_number = participant_ids[i] if i < len(participant_ids) else ''
+                        
+                        BookingParticipant.objects.create(
+                            booking=booking,
+                            name=name.strip(),
+                            age=age,
+                            participant_type=participant_type,
+                            id_number=id_number.strip() if id_number else ''
+                        )
+                        participants_created += 1
+                
+                logger.debug(f"Created {participants_created} participants")
+                
+                # Update event booking count
+                event.current_bookings += total_participants
+                event.save()
+                
+                logger.debug(f"Updated event booking count to: {event.current_bookings}")
+                
+                messages.success(
+                    request, 
+                    f'Booking created successfully! Your booking ID is {booking.booking_id}. '
+                    f'We will contact you via {booking.get_booking_method_display().lower()} shortly.'
+                )
+                return redirect('booking_detail', booking_id=booking.booking_id)
+                
+        except Exception as e:
+            logger.error(f"Error creating booking: {str(e)}")
+            messages.error(request, f'Error creating booking: {str(e)}. Please try again.')
+    
     else:
         form = BookingForm(event=event)
     
@@ -255,6 +322,9 @@ def booking_create(request, event_slug):
     }
     return render(request, 'bookings/create.html', context)
 
+
+
+@require_http_methods(["GET"])
 def booking_detail(request, booking_id):
     """View booking details"""
     booking = get_object_or_404(
