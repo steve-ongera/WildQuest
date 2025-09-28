@@ -34,6 +34,313 @@
     <!-- Template Stylesheet -->
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
 
+    <!-- Mobile Drawer Custom CSS -->
+    <style>
+        /* Mobile Drawer Styles */
+        .mobile-nav-drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            height: 100vh;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            z-index: 9999;
+            transition: right 0.3s ease-in-out;
+            box-shadow: -2px 0 20px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .mobile-nav-drawer.open {
+            right: 0;
+        }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bs-primary);
+            color: white;
+            position: relative;
+        }
+
+        .drawer-header h5 {
+            margin: 0;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .drawer-back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            position: absolute;
+            left: 15px;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .drawer-back-btn.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .drawer-back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .drawer-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .drawer-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .drawer-content {
+            padding: 0;
+            position: relative;
+            height: calc(100vh - 80px);
+        }
+
+        .drawer-main-menu,
+        .drawer-categories-menu {
+            padding: 20px;
+            height: 100%;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .drawer-categories-menu {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            width: 100%;
+            background: inherit;
+        }
+
+        .drawer-categories-menu.active {
+            transform: translateX(-100%);
+        }
+
+        .drawer-main-menu.slide-left {
+            transform: translateX(-100%);
+        }
+
+        .drawer-nav-item {
+            display: block;
+            padding: 15px 8px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drawer-nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--bs-primary);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .drawer-nav-item:hover {
+           
+            text-decoration: none;
+            transform: translateX(5px);
+            border-color: var(--bs-primary);
+        }
+
+        .drawer-nav-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .drawer-nav-item.active {
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            color: var(--bs-primary);
+            border-color: var(--bs-primary);
+        }
+
+        .drawer-nav-item i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .drawer-nav-item .nav-arrow {
+            float: right;
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .drawer-category-badge {
+            float: right;
+            background: var(--bs-primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .drawer-nav-item:hover .drawer-category-badge {
+            background: white;
+            color: var(--bs-primary);
+        }
+
+        .drawer-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, #dee2e6 50%, transparent 100%);
+            margin: 20px 0;
+        }
+
+        .drawer-all-adventures {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e0e0e0 100%); /* light gray to medium gray */
+            color: #333 !important; /* dark gray text for readability */
+            font-weight: 600;
+            border: 1px solid #ccc; /* subtle border for contrast */
+        }
+
+        .drawer-all-adventures:hover {
+            background: linear-gradient(135deg, #d6d6d6 0%, #bfbfbf 100%); /* darker gray hover */
+            color: #000 !important; /* stronger contrast on hover */
+        }
+
+
+        /* Hide desktop navbar collapse on mobile */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                display: none !important;
+            }
+            
+            .navbar-toggler {
+                display: block !important;
+            }
+        }
+
+        /* Hide mobile drawer on larger screens */
+        @media (min-width: 992px) {
+            .mobile-nav-drawer,
+            .drawer-overlay {
+                display: none !important;
+            }
+            
+            .navbar-toggler {
+                display: none !important;
+            }
+        }
+
+        /* Prevent body scroll when drawer is open */
+        body.drawer-open {
+            overflow: hidden;
+        }
+
+        /* Smooth animations */
+        .drawer-nav-item {
+            animation: slideInRight 0.3s ease forwards;
+        }
+
+        .drawer-nav-item:nth-child(1) { animation-delay: 0.1s; }
+        .drawer-nav-item:nth-child(2) { animation-delay: 0.15s; }
+        .drawer-nav-item:nth-child(3) { animation-delay: 0.2s; }
+        .drawer-nav-item:nth-child(4) { animation-delay: 0.25s; }
+        .drawer-nav-item:nth-child(5) { animation-delay: 0.3s; }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Custom hamburger menu */
+        .custom-hamburger {
+            display: none;
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .custom-hamburger:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .hamburger-icon {
+            width: 25px;
+            height: 20px;
+            position: relative;
+        }
+
+        .hamburger-icon span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: #333;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-icon span:nth-child(1) { top: 0; }
+        .hamburger-icon span:nth-child(2) { top: 8px; }
+        .hamburger-icon span:nth-child(3) { top: 16px; }
+
+        @media (max-width: 991.98px) {
+            .custom-hamburger {
+                display: block;
+            }
+        }
+    </style>
+
     <!-- Additional CSS -->
     {% block extra_css %}{% endblock %}
 </head>
@@ -48,6 +355,78 @@
     </div>
     <!-- Spinner End -->
 
+    <!-- Mobile Navigation Drawer Overlay -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div class="mobile-nav-drawer" id="mobileNavDrawer">
+        <div class="drawer-header">
+            <button class="drawer-back-btn" id="backToMain">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h5 id="drawerTitle">
+                <i class="fas fa-bars me-2"></i>Menu
+            </h5>
+            <button class="drawer-close" id="closeDrawer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="drawer-content">
+            <!-- Main Menu -->
+            <div class="drawer-main-menu" id="mainMenu">
+                <a href="{% url 'index' %}" class="drawer-nav-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                    <i class="fas fa-home"></i>Home
+                </a>
+                
+                <a href="{% url 'about' %}" class="drawer-nav-item {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                    <i class="fas fa-info-circle"></i>About Us
+                </a>
+                
+                <a href="{% url 'service' %}" class="drawer-nav-item {% if request.resolver_match.url_name == 'service' %}active{% endif %}">
+                    <i class="fas fa-cogs"></i>Services
+                </a>
+                
+                <a href="{% url 'events_list' %}" class="drawer-nav-item {% if request.resolver_match.url_name == 'events_list' %}active{% endif %}">
+                    <i class="fas fa-calendar-alt"></i>Adventures
+                </a>
+                
+                <a href="#!" class="drawer-nav-item" id="categoriesToggle">
+                    <i class="fas fa-compass"></i>Categories
+                    <i class="fas fa-chevron-right nav-arrow"></i>
+                </a>
+                
+                <a href="{% url 'contact' %}" class="drawer-nav-item {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">
+                    <i class="fas fa-envelope"></i>Contact
+                </a>
+            </div>
+
+            <!-- Categories Menu -->
+            <div class="drawer-categories-menu" id="categoriesMenu">
+                {% for category in nav_categories %}
+                    <a href="{% url 'category_events' category.slug %}" class="drawer-nav-item">
+                        {% if category.icon %}<i class="{{ category.icon }}"></i>{% endif %}
+                        {{ category.name }}
+                        {% if category.event_count > 0 %}
+                            <span class="drawer-category-badge">{{ category.event_count }}</span>
+                        {% endif %}
+                    </a>
+                {% empty %}
+                    <div class="text-muted text-center py-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No categories available
+                    </div>
+                {% endfor %}
+                
+                <div class="drawer-divider"></div>
+                
+                <a href="{% url 'events_list' %}" class="drawer-nav-item drawer-all-adventures">
+                    <i class="fas fa-list"></i>All Adventures
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Navbar Start -->
     <div class="container-fluid sticky-top">
         <div class="container">
@@ -55,10 +434,17 @@
                 <a href="{% url 'index' %}" class="navbar-brand">
                     <h1>WildQuest <span class="text-primary">Kenya</span></h1>
                 </a>
-                <button type="button" class="navbar-toggler ms-auto me-0" data-bs-toggle="collapse"
-                    data-bs-target="#navbarCollapse" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+                
+                <!-- Custom Mobile Menu Button -->
+                <button type="button" class="custom-hamburger ms-auto" id="openMobileDrawer">
+                    <div class="hamburger-icon">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
                 </button>
+
+                <!-- Desktop Navigation -->
                 <div class="collapse navbar-collapse" id="navbarCollapse">
                     <div class="navbar-nav ms-auto">
                         <a href="{% url 'index' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">Home</a>
@@ -66,7 +452,7 @@
                         <a href="{% url 'service' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'service' %}active{% endif %}">Services</a>
                         <a href="{% url 'events_list'%}" class="nav-item nav-link {% if request.resolver_match.url_name == 'events_list' %}active{% endif %}">Adventures</a>
                         
-                        <!-- Updated Categories Dropdown -->
+                        <!-- Desktop Categories Dropdown -->
                         <div class="nav-item dropdown">
                             <a href="#!" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Categories</a>
                             <div class="dropdown-menu bg-light mt-2">
@@ -87,6 +473,7 @@
                                 </a>
                             </div>
                         </div>
+                        
                         <a href="{% url 'contact' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>
                     </div>
                 </div>
@@ -216,6 +603,126 @@
 
     <!-- Template Javascript -->
     <script src="{% static 'js/main.js' %}"></script>
+
+    <!-- Mobile Navigation Drawer JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const openDrawerBtn = document.getElementById('openMobileDrawer');
+            const closeDrawerBtn = document.getElementById('closeDrawer');
+            const backToMainBtn = document.getElementById('backToMain');
+            const categoriesToggle = document.getElementById('categoriesToggle');
+            const drawer = document.getElementById('mobileNavDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const mainMenu = document.getElementById('mainMenu');
+            const categoriesMenu = document.getElementById('categoriesMenu');
+            const drawerTitle = document.getElementById('drawerTitle');
+            const body = document.body;
+
+            let currentView = 'main'; // 'main' or 'categories'
+
+            // Open drawer
+            function openDrawer() {
+                drawer.classList.add('open');
+                overlay.classList.add('active');
+                body.classList.add('drawer-open');
+            }
+
+            // Close drawer
+            function closeDrawer() {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+                body.classList.remove('drawer-open');
+                // Reset to main menu when closing
+                setTimeout(() => {
+                    if (currentView === 'categories') {
+                        showMainMenu();
+                    }
+                }, 300);
+            }
+
+            // Show categories menu
+            function showCategoriesMenu() {
+                currentView = 'categories';
+                mainMenu.classList.add('slide-left');
+                categoriesMenu.classList.add('active');
+                drawerTitle.innerHTML = '<i class="fas fa-compass me-2"></i>Categories';
+                backToMainBtn.classList.add('show');
+            }
+
+            // Show main menu
+            function showMainMenu() {
+                currentView = 'main';
+                mainMenu.classList.remove('slide-left');
+                categoriesMenu.classList.remove('active');
+                drawerTitle.innerHTML = '<i class="fas fa-bars me-2"></i>Menu';
+                backToMainBtn.classList.remove('show');
+            }
+
+            // Event listeners
+            if (openDrawerBtn) {
+                openDrawerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openDrawer();
+                });
+            }
+
+            if (closeDrawerBtn) {
+                closeDrawerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeDrawer();
+                });
+            }
+
+            if (backToMainBtn) {
+                backToMainBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showMainMenu();
+                });
+            }
+
+            if (categoriesToggle) {
+                categoriesToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showCategoriesMenu();
+                });
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', function() {
+                    closeDrawer();
+                });
+            }
+
+            // Close drawer on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (drawer.classList.contains('open')) {
+                        if (currentView === 'categories') {
+                            showMainMenu();
+                        } else {
+                            closeDrawer();
+                        }
+                    }
+                }
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 992 && drawer.classList.contains('open')) {
+                    closeDrawer();
+                }
+            });
+
+            // Close drawer when navigation links are clicked (except categories toggle)
+            const drawerNavLinks = document.querySelectorAll('.drawer-nav-item:not(#categoriesToggle)');
+            drawerNavLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // Close drawer after a short delay to allow for navigation
+                    setTimeout(closeDrawer, 200);
+                });
+            });
+        });
+    </script>
 
     <!-- Additional JavaScript -->
     {% block extra_js %}{% endblock %}
