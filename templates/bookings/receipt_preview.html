@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Receipt Preview - WildQuest Kenya{% endblock %}
+
+{% block content %}
+<!-- Hero Start -->
+<div class="container-fluid pb-5 bg-primary hero-header">
+    <div class="container py-5">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-8 text-center text-lg-start">
+                <h1 class="display-4 mb-0 animated slideInLeft">Receipt Preview</h1>
+                <p class="text-light mt-2">Booking ID: {{ booking.booking_id }}</p>
+            </div>
+            <div class="col-lg-4 animated slideInRight">
+                <div class="text-end">
+                    <a href="{% url 'booking_receipt_pdf' booking.booking_id %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-download me-2"></i>Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Hero End -->
+
+<!-- Receipt Preview -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Receipt Container -->
+                <div class="bg-white shadow-lg p-5" style="border-radius: 10px;">
+                    <!-- Header -->
+                    <div class="border-bottom border-3 border-primary pb-4 mb-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h1 class="text-primary mb-1">WildQuest Kenya</h1>
+                                <p class="text-muted mb-1 fst-italic">Explore. Adventure. Discover.</p>
+                                <small class="text-muted">Registration No: CR/2024/001234</small>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-end">
+                                    <strong>WildQuest Kenya</strong><br>
+                                    <small>
+                                        Nairobi, Kenya<br>
+                                        Phone: {{ contact_info.phone }}<br>
+                                        Email: {{ contact_info.email }}<br>
+                                        Website: www.wildquest.co.ke
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <div class="border p-2 bg-light">
+                                    <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" style="width: 60px; height: 60px;"><br>
+                                    <small>Scan to verify</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Title -->
+                    <div class="text-center bg-light p-3 mb-4" style="border-radius: 5px;">
+                        <h2 class="text-primary mb-0">BOOKING RECEIPT</h2>
+                    </div>
+
+                    <!-- Receipt Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary border-bottom pb-2">Receipt Details</h5>
+                            <div class="row mb-2">
+                                <div class="col-6"><strong>Receipt Date:</strong></div>
+                                <div class="col-6">{{ receipt_date|date:"M d, Y H:i" }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-6"><strong>Booking ID:</strong></div>
+                                <div class="col-6"><strong>{{ booking.booking_id }}</strong></div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-6"><strong>Status:</strong></div>
+                                <div class="col-6">
+                                    <span class="badge 
+                                        {% if booking.status == 'pending' %}bg-warning
+                                        {% elif booking.status == 'confirmed' %}bg-info
+                                        {% elif booking.status == 'paid' %}bg-success
+                                        {% elif booking.status == 'cancelled' %}bg-danger
+                                        {% elif booking.status == 'completed' %}bg-success
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="text-primary border-bottom pb-2">Customer Information</h5>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Name:</strong></div>
+                                <div class="col-8">{{ booking.customer_name }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Email:</strong></div>
+                                <div class="col-8">{{ booking.customer_email }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Phone:</strong></div>
+                                <div class="col-8">{{ booking.customer_phone }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Booked:</strong></div>
+                                <div class="col-8">{{ booking.booked_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event Information -->
+                    <div class="bg-light p-4 mb-4 border-start border-primary border-4">
+                        <h5 class="text-primary mb-3">Event Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="row mb-2">
+                                    <div class="col-5"><strong>Event:</strong></div>
+                                    <div class="col-7">{{ booking.event.title }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5"><strong>Location:</strong></div>
+                                    <div class="col-7">{{ booking.event.location.name }}, {{ booking.event.location.county }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5"><strong>Category:</strong></div>
+                                    <div class="col-7">{{ booking.event.category.name }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Date:</strong></div>
+                                    <div class="col-8">{{ booking.event.start_date|date:"M d, Y" }} - {{ booking.event.end_date|date:"M d, Y" }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Duration:</strong></div>
+                                    <div class="col-8">{{ booking.event.duration_days }} day{{ booking.event.duration_days|pluralize }}</div>
+                                </div>
+                                {% if booking.pricing_tier %}
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Package:</strong></div>
+                                    <div class="col-8">{{ booking.pricing_tier.name }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Participants -->
+                    {% if participants %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Participants ({{ participants.count }})</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Age</th>
+                                        <th>ID/Passport</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for participant in participants %}
+                                    <tr>
+                                        <td>{{ participant.name }}</td>
+                                        <td>
+                                            <span class="badge {% if participant.participant_type == 'adult' %}bg-primary{%

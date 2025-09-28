@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WildQuest Kenya - Booking Receipt</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0.5in;
+        }
+        
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+        .header {
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .company-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .company-logo {
+            flex: 1;
+        }
+        
+        .company-logo h1 {
+            color: #007bff;
+            font-size: 24px;
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        .company-logo .tagline {
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+        
+        .company-details {
+            flex: 1;
+            text-align: right;
+            font-size: 11px;
+        }
+        
+        .receipt-title {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        .receipt-title h2 {
+            margin: 0;
+            color: #007bff;
+            font-size: 18px;
+        }
+        
+        .receipt-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .receipt-details, .booking-details {
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .receipt-details h4, .booking-details h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+            font-size: 14px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        .event-section {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .event-section h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .participants-table th, .participants-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .participants-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .pricing-section {
+            float: right;
+            width: 300px;
+            margin: 20px 0;
+        }
+        
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .pricing-table td {
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .pricing-table .total-row {
+            background: #f8f9fa;
+            font-weight: bold;
+            border-top: 2px solid #007bff;
+        }
+        
+        .qr-section {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            background: white;
+        }
+        
+        .qr-section img {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d1ecf1; color: #0c5460; }
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        .status-completed { background: #d4edda; color: #155724; }
+        
+        .stamp-area {
+            border: 2px dashed #dee2e6;
+            width: 150px;
+            height: 100px;
+            float: right;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+        
+        .stamp-text {
+            text-align: center;
+            color: #6c757d;
+            font-size: 11px;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+        }
+        
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
+        .additional-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .additional-info h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="company-info">
+            <div class="company-logo">
+                <h1>WildQuest Kenya</h1>
+                <div class="tagline">Explore. Adventure. Discover.</div>
+                <div style="margin-top: 10px; font-size: 10px;">
+                    Registration No: {{ company_info.registration }}
+                </div>
+            </div>
+            <div class="company-details">
+                <strong>{{ company_info.name }}</strong><br>
+                {{ company_info.address }}<br>
+                Phone: {{ company_info.phone }}<br>
+                Email: {{ company_info.email }}<br>
+                Website: {{ company_info.website }}
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code -->
+    <div class="qr-section">
+        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code"><br>
+        <small>Scan to verify</small>
+    </div>
+
+    <!-- Receipt Title -->
+    <div class="receipt-title">
+        <h2>BOOKING RECEIPT</h2>
+    </div>
+
+    <!-- Receipt Information -->
+    <div class="receipt-info">
+        <div class="receipt-details">
+            <h4>Receipt Details</h4>
+            <div class="info-row">
+                <span>Receipt Date:</span>
+                <span>{{ receipt_date|date:"M d, Y H:i" }}</span>
+            </div>
+            <div class="info-row">
+                <span>Booking ID:</span>
+                <span><strong>{{ booking.booking_id }}</strong></span>
+            </div>
+            <div class="info-row">
+                <span>Status:</span>
+                <span class="status-badge status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+            </div>
+        </div>
+        
+        <div class="booking-details">
+            <h4>Customer Information</h4>
+            <div class="info-row">
+                <span>Name:</span>
+                <span>{{ booking.customer_name }}</span>
+            </div>
+            <div class="info-row">
+                <span>Email:</span>
+                <span>{{ booking.customer_email }}</span>
+            </div>
+            <div class="info-row">
+                <span>Phone:</span>
+                <span>{{ booking.customer_phone }}</span>
+            </div>
+            <div class="info-row">
+                <span>Booking Date:</span>
+                <span>{{ booking.booked_at|date:"M d, Y H:i" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Information -->
+    <div class="event-section">
+        <h4>Event Details</h4>
+        <div class="info-row">
+            <span><strong>Event:</strong></span>
+            <span>{{ event.title }}</span>
+        </div>
+        <div class="info-row">
+            <span><strong>Location:</strong></span>
+            <span>{{ event.location.name }}, {{ event.location.county }}</span>
+        </div>
+        <div class="info-row">
+            <span><strong>Date:</strong></span>
+            <span>{{ event.start_date|date:"M d, Y" }} - {{ event.end_date|date:"M d, Y" }}</span>
+        </div>
+        <div class="info-row">
+            <span><strong>Duration:</strong></span>
+            <span>{{ event.duration_days }} day{{ event.duration_days|pluralize }}</span>
+        </div>
+        <div class="info-row">
+            <span><strong>Category:</strong></span>
+            <span>{{ event.category.name }}</span>
+        </div>
+        {% if booking.pricing_tier %}
+        <div class="info-row">
+            <span><strong>Package:</strong></span>
+            <span>{{ booking.pricing_tier.name }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Participants -->
+    {% if participants %}
+    <h4>Participants ({{ participants.count }})</h4>
+    <table class="participants-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Age</th>
+                <th>ID/Passport</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for participant in participants %}
+            <tr>
+                <td>{{ participant.name }}</td>
+                <td>{{ participant.get_participant_type_display }}</td>
+                <td>{% if participant.age %}{{ participant.age }}{% else %}-{% endif %}</td>
+                <td>
+                    {% if participant.id_number %}{{ participant.id_number }}{% elif participant.passport_number %}{{ participant.passport_number }}{% else %}-{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Pricing Breakdown -->
+    <div class="pricing-section">
+        <table class="pricing-table">
+            <tr>
+                <td>Base Amount:</td>
+                <td>KES {{ booking.base_amount|floatformat:2 }}</td>
+            </tr>
+            {% if booking.discount_amount > 0 %}
+            <tr>
+                <td>Discount:</td>
+                <td style="color: green;">-KES {{ booking.discount_amount|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            {% if booking.tax_amount > 0 %}
+            <tr>
+                <td>Tax:</td>
+                <td>KES {{ booking.tax_amount|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td><strong>Total Amount:</strong></td>
+                <td><strong>KES {{ booking.total_amount|floatformat:2 }}</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="clearfix"></div>
+
+    <!-- Additional Information -->
+    {% if booking.dietary_requirements or booking.special_requests %}
+    <div class="additional-info">
+        <h4>Additional Information</h4>
+        {% if booking.dietary_requirements %}
+        <p><strong>Dietary Requirements:</strong> {{ booking.dietary_requirements }}</p>
+        {% endif %}
+        {% if booking.special_requests %}
+        <p><strong>Special Requests:</strong> {{ booking.special_requests }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Payment Information -->
+    {% if payments %}
+    <div style="margin: 20px 0;">
+        <h4>Payment History</h4>
+        <table class="participants-table">
+            <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_id }}</td>
+                    <td>KES {{ payment.amount|floatformat:2 }}</td>
+                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td class="status-badge status-{{ payment.status }}">{{ payment.get_status_display }}</td>
+                    <td>{{ payment.initiated_at|date:"M d, Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Admin Stamp Area -->
+    <div class="stamp-area">
+        <div class="stamp-text">
+            ADMIN APPROVAL<br>
+            STAMP AREA<br>
+            <small>Date: _________</small><br>
+            <small>Signature: _________</small>
+        </div>
+    </div>
+
+    <div class="clearfix"></div>
+
+    <!-- Terms -->
+    <div style="margin: 30px 0 60px 0; font-size: 10px; color: #666;">
+        <h4 style="color: #333; font-size: 12px;">Terms & Conditions</h4>
+        <p>This receipt serves as confirmation of your booking with WildQuest Kenya. Please keep this receipt for your records and present it during check-in. Cancellation policies apply as per our terms and conditions. For support, contact us at {{ company_info.phone }} or {{ company_info.email }}.</p>
+        <p><strong>Important:</strong> This is a computer-generated receipt. The QR code can be scanned for verification purposes.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Thank you for choosing WildQuest Kenya - Your Adventure Partner!</p>
+        <p>This receipt was generated on {{ receipt_date|date:"M d, Y H:i" }} | Booking ID: {{ booking.booking_id }}</p>
+    </div>
+</body>
+</html>

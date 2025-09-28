@@ -343,6 +343,157 @@ def booking_detail(request, booking_id):
     }
     return render(request, 'bookings/detail.html', context)
 
+
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse, Http404
+from django.template.loader import get_template
+from django.conf import settings
+from django.contrib import messages
+from django.urls import reverse
+from django.utils import timezone
+from xhtml2pdf import pisa
+from io import BytesIO
+import qrcode
+import base64
+from PIL import Image
+import os
+from .models import Booking
+
+def generate_booking_receipt_pdf(request, booking_id):
+    """Generate and download PDF receipt for booking"""
+    booking = get_object_or_404(
+        Booking.objects.select_related('event', 'pricing_tier', 'event__location', 'event__category')
+        .prefetch_related('participants', 'payments'),
+        booking_id=booking_id
+    )
+    
+    # Check if user has access to this booking
+    if request.user.is_authenticated and booking.user != request.user:
+        if not request.user.is_staff:
+            raise Http404("You don't have permission to access this receipt.")
+    
+    # Generate QR Code for booking verification
+    qr_data = f"WQ-{booking.booking_id}"
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    
+    # Create QR code image
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Convert QR code to base64 for embedding in HTML
+    buffered = BytesIO()
+    qr_img.save(buffered, format="PNG")
+    qr_code_base64 = base64.b64encode(buffered.getvalue()).decode()
+    
+    # Prepare context for template
+    context = {
+        'booking': booking,
+        'event': booking.event,
+        'participants': booking.participants.all(),
+        'payments': booking.payments.all(),
+        'qr_code': qr_code_base64,
+        'receipt_date': timezone.now(),
+        'company_info': {
+            'name': 'WildQuest Kenya',
+            'address': 'Nairobi, Kenya',
+            'phone': '+254 712 345 678',
+            'email': 'info@wildquest.co.ke',
+            'website': 'www.wildquest.co.ke',
+            'registration': 'CR/2024/001234',  # Company registration number
+        }
+    }
+    
+    # Render HTML template
+    template = get_template('bookings/receipt_pdf.html')
+    html = template.render(context)
+    
+    # Create PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="WildQuest_Receipt_{booking.booking_id}.pdf"'
+    
+    # Generate PDF
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    
+    if pisa_status.err:
+        return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    
+    return response
+
+
+def booking_receipt_preview(request, booking_id):
+    """Preview the receipt before downloading"""
+    booking = get_object_or_404(
+        Booking.objects.select_related('event', 'pricing_tier', 'event__location', 'event__category')
+        .prefetch_related('participants', 'payments'),
+        booking_id=booking_id
+    )
+    
+    # Check permissions
+    if request.user.is_authenticated and booking.user != request.user:
+        if not request.user.is_staff:
+            raise Http404("You don't have permission to access this receipt.")
+    
+    # Generate QR Code
+    qr_data = f"WQ-{booking.booking_id}"
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    buffered = BytesIO()
+    qr_img.save(buffered, format="PNG")
+    qr_code_base64 = base64.b64encode(buffered.getvalue()).decode()
+    
+    context = {
+        'booking': booking,
+        'event': booking.event,
+        'participants': booking.participants.all(),
+        'payments': booking.payments.all(),
+        'qr_code': qr_code_base64,
+        'receipt_date': timezone.now(),
+        'company_info': {
+            'name': 'WildQuest Kenya',
+            'address': 'Nairobi, Kenya',
+            'phone': '+254 712 345 678',
+            'email': 'info@wildquest.co.ke',
+            'website': 'www.wildquest.co.ke',
+            'registration': 'CR/2024/001234',
+        }
+    }
+    
+    return render(request, 'bookings/receipt_preview.html', context)
+
+
+# Admin view for approving receipts (you can extend this)
+def admin_approve_receipt(request, booking_id):
+    """Admin view to approve/stamp receipts"""
+    if not request.user.is_staff:
+        raise Http404("Permission denied")
+    
+    booking = get_object_or_404(Booking, booking_id=booking_id)
+    
+    if request.method == 'POST':
+        # Add approval logic here
+        # You could add an 'is_receipt_approved' field to your Booking model
+        messages.success(request, f'Receipt for booking {booking.booking_id} has been approved.')
+        return redirect('admin:your_app_booking_changelist')  # Redirect to admin
+    
+    context = {
+        'booking': booking,
+    }
+    return render(request, 'admin/approve_receipt.html', context)
+
 def whatsapp_booking(request, event_slug):
     """Handle WhatsApp booking requests"""
     event = get_object_or_404(Event, slug=event_slug, status='published')

@@ -211,12 +211,22 @@
                 </div>
                 {% endif %}
                 
-                <!-- Print Button -->
+                <!-- Download Receipt Button -->
                 <div class="text-center mb-4">
-                    <button class="btn btn-outline-secondary" onclick="printBooking()">
-                        <i class="fas fa-print me-2"></i>Print Booking Details
-                    </button>
+                    <a href="{% url 'booking_receipt_pdf' booking.booking_id %}" 
+                    class="btn btn-outline-secondary">
+                        <i class="fas fa-file-pdf me-2"></i>Download Receipt
+                    </a>
                 </div>
+
+                <!-- Receipt Preview -->
+                <div class="bg-light p-4 rounded mb-4">
+                    <h4 class="mb-3">Receipt Preview</h4>
+                    <div class="border p-3" style="background: #fff; border: 1px solid #ddd;">
+                        
+                    </div>
+                </div>
+
             </div>
             
             <!-- Sidebar -->

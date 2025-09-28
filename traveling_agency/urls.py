@@ -23,6 +23,11 @@ urlpatterns = [
     path('api/event/<int:event_id>/pricing/', views.get_event_pricing, name='get_event_pricing'),
     path('api/event/<int:event_id>/availability/', views.check_availability, name='check_availability'),
 
+    # Booking receipt routes
+    path('booking/<str:booking_id>/receipt/pdf/', views.generate_booking_receipt_pdf, name='booking_receipt_pdf'),
+    path('booking/<str:booking_id>/receipt/preview/', views.booking_receipt_preview, name='booking_receipt_preview'),
+    path('booking/<str:booking_id>/receipt/approve/', views.admin_approve_receipt, name='admin_approve_receipt'),
+
     # Additional informational pages
     path('feature/', views.feature, name='feature'),
     path('project/', views.project, name='project'),
