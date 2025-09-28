@@ -65,13 +65,25 @@
                         <a href="{% url 'service' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'service' %}active{% endif %}">Services</a>
                         <a href="{% url 'events_list'%}" class="nav-item nav-link {% if request.resolver_match.url_name == 'events_list' %}active{% endif %}">Adventures</a>
                         
+                        <!-- Updated Categories Dropdown -->
                         <div class="nav-item dropdown">
-                            <a href="#!" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">More</a>
+                            <a href="#!" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Categories</a>
                             <div class="dropdown-menu bg-light mt-2">
-                                <a href="#" class="dropdown-item">Why Choose Us</a>
-                                <a href="#" class="dropdown-item">Our Team</a>
-                                <a href="#" class="dropdown-item">Testimonials</a>
-                                <a href="#" class="dropdown-item">404 Page</a>
+                                {% for category in nav_categories %}
+                                    <a href="{% url 'category_events' category.slug %}" class="dropdown-item">
+                                        {% if category.icon %}<i class="{{ category.icon }} me-2"></i>{% endif %}
+                                        {{ category.name }}
+                                        {% if category.event_count > 0 %}
+                                            <span class="badge bg-primary ms-1">{{ category.event_count }}</span>
+                                        {% endif %}
+                                    </a>
+                                {% empty %}
+                                    <span class="dropdown-item-text text-muted">No categories available</span>
+                                {% endfor %}
+                                <div class="dropdown-divider"></div>
+                                <a href="{% url 'events_list' %}" class="dropdown-item">
+                                    <i class="fas fa-list me-2"></i>All Adventures
+                                </a>
                             </div>
                         </div>
                         <a href="{% url 'contact' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>

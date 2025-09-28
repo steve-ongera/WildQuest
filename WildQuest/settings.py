@@ -51,6 +51,12 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # Add your custom context processors here
+                'traveling_agency.context_processors.site_wide_context',
+                'traveling_agency.context_processors.booking_context',
+                'traveling_agency.context_processors.seo_context',
+                'traveling_agency.context_processors.newsletter_context',
             ],
         },
     },
