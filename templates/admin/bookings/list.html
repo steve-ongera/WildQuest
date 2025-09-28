@@ -1,0 +1,226 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}Bookings Management - Travel Kenya Admin{% endblock %}
+
+{% block page_title %}Bookings{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:dashboard' %}">Admin</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Bookings</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Bookings Management</h2>
+    <div class="btn-group">
+        <a href="{% url 'admin_export_bookings' %}" class="btn btn-outline-primary">
+            <i class="fas fa-download me-2"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Search</label>
+                <input type="text" name="search" class="form-control" placeholder="Search bookings..." value="{{ filters.search }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Event</label>
+                <select name="event" class="form-select">
+                    <option value="">All Events</option>
+                    {% for event in events %}
+                        <option value="{{ event.id }}" {% if filters.event == event.id|stringformat:"s" %}selected{% endif %}>{{ event.title|truncatechars:40 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" value="{{ filters.date }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bookings Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-ticket-alt me-2"></i>
+            Bookings List
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if bookings %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Customer</th>
+                            <th>Event</th>
+                            <th>Participants</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                            <tr>
+                                <td>
+                                    <code class="text-primary">{{ booking.booking_id|slice:":8" }}...</code>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>{{ booking.customer_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-envelope me-1"></i>{{ booking.customer_email }}
+                                            <br>
+                                            <i class="fas fa-phone me-1"></i>{{ booking.customer_phone }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>{{ booking.event.title|truncatechars:30 }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ booking.event.start_date|date:"M d, Y" }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-center">
+                                        <strong>{{ booking.number_of_participants }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {% if booking.adults_count %}{{ booking.adults_count }}A{% endif %}
+                                            {% if booking.children_count %} {{ booking.children_count }}C{% endif %}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>KSh {{ booking.total_amount|floatformat:0 }}</strong>
+                                    {% if booking.discount_amount > 0 %}
+                                        <br><small class="text-success">-KSh {{ booking.discount_amount|floatformat:0 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ booking.get_booking_method_display }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if booking.status == 'confirmed' or booking.status == 'paid' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>
+                                        {{ booking.booked_at|date:"M d, Y" }}
+                                        <br>
+                                        <small class="text-muted">{{ booking.booked_at|time:"H:i" }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'admin:booking_detail' booking.booking_id %}" class="btn btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-cog"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="status" value="confirmed">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="fas fa-check text-success me-2"></i>Confirm
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li>
+                                                    <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="status" value="cancelled">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="fas fa-times text-danger me-2"></i>Cancel
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if bookings.has_other_pages %}
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination mb-0">
+                            {% if bookings.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ bookings.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in bookings.paginator.page_range %}
+                                {% if bookings.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > bookings.number|add:'-3' and num < bookings.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if bookings.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ bookings.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                <h5>No Bookings Found</h5>
+                <p class="text-muted">No bookings match your current filters.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

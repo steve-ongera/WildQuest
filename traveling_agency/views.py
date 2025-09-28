@@ -775,3 +775,860 @@ def custom_403(request, exception):
 def custom_400(request, exception):
     return render(request, '400.html', status=400)
 
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
+from django.core.paginator import Paginator
+from django.db.models import Q, Count, Sum, Avg
+from django.utils import timezone
+from django.urls import reverse
+from django.views.decorators.http import require_POST
+from django.template.response import TemplateResponse
+import csv
+import json
+from datetime import datetime, timedelta
+from decimal import Decimal
+
+from .models import (
+    Event, Booking, Payment, Category, Location, EventImage, PricingTier,
+    BookingParticipant, WhatsAppBooking, Review, FAQ, Itinerary,
+    EventFeature, EventFeatureAssignment, ContactInquiry, SystemConfiguration,
+    NewsletterSubscription
+)
+from .forms import (
+    EventForm, CategoryForm, LocationForm, PricingTierForm, EventImageForm,
+    SystemConfigurationForm, ContactInquiryResponseForm
+)
+
+# ===== VIEWS.PY =====
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
+from django.utils.decorators import method_decorator
+from django.views.generic import View
+from django import forms
+
+
+class LoginForm(forms.Form):
+    """Custom login form"""
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Username or Email',
+            'autofocus': True
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Password'
+        })
+    )
+    remember_me = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+
+@sensitive_post_parameters('password')
+@csrf_protect
+@never_cache
+def admin_login_view(request):
+    """Custom admin login view"""
+    if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+        return redirect('admin_dashboard')
+    
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            remember_me = form.cleaned_data.get('remember_me', False)
+            
+            # Try to authenticate
+            user = authenticate(request, username=username, password=password)
+            
+            if user is not None:
+                if user.is_active and (user.is_staff or user.is_superuser):
+                    login(request, user)
+                    
+                    # Set session expiry based on remember me
+                    if not remember_me:
+                        request.session.set_expiry(0)  # Browser session
+                    else:
+                        request.session.set_expiry(1209600)  # 2 weeks
+                    
+                    # Redirect to next URL or dashboard
+                    next_url = request.GET.get('next', reverse('admin_dashboard'))
+                    messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
+                    return redirect(next_url)
+                else:
+                    if not user.is_active:
+                        messages.error(request, 'Your account has been deactivated.')
+                    else:
+                        messages.error(request, 'You do not have permission to access the admin area.')
+            else:
+                messages.error(request, 'Invalid username or password.')
+    else:
+        form = LoginForm()
+    
+    context = {
+        'form': form,
+        'title': 'Admin Login',
+        'next': request.GET.get('next', ''),
+    }
+    return render(request, 'admin/auth/login.html', context)
+
+
+@login_required
+def admin_logout_view(request):
+    """Custom admin logout view"""
+    user_name = request.user.get_full_name() or request.user.username
+    logout(request)
+    messages.success(request, f'You have been logged out successfully. Goodbye, {user_name}!')
+    return redirect('admin_login')
+
+
+@method_decorator([login_required, never_cache], name='dispatch')
+class ProfileView(View):
+    """User profile view"""
+    
+    def get(self, request):
+        context = {
+            'user': request.user,
+            'title': 'Profile',
+        }
+        return render(request, 'admin/auth/profile.html', context)
+
+
+
+
+
+def admin_required(user):
+    return user.is_staff or user.is_superuser
+
+
+@staff_member_required
+def admin_dashboard(request):
+    """Main admin dashboard with key metrics"""
+    # Date ranges for analytics
+    today = timezone.now().date()
+    last_30_days = today - timedelta(days=30)
+    last_7_days = today - timedelta(days=7)
+    
+    # Key metrics
+    total_events = Event.objects.count()
+    active_events = Event.objects.filter(status='published').count()
+    total_bookings = Booking.objects.count()
+    pending_bookings = Booking.objects.filter(status='pending').count()
+    
+    # Revenue metrics
+    total_revenue = Payment.objects.filter(status='completed').aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+    
+    revenue_30_days = Payment.objects.filter(
+        status='completed',
+        completed_at__gte=last_30_days
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Recent activity
+    recent_bookings = Booking.objects.select_related('event').order_by('-booked_at')[:10]
+    recent_payments = Payment.objects.select_related('booking__event').order_by('-initiated_at')[:10]
+    pending_whatsapp = WhatsAppBooking.objects.filter(status='new').count()
+    unresolved_inquiries = ContactInquiry.objects.filter(is_resolved=False).count()
+    
+    # Chart data for bookings over time
+    booking_chart_data = []
+    for i in range(30, 0, -1):
+        date = today - timedelta(days=i)
+        bookings_count = Booking.objects.filter(booked_at__date=date).count()
+        booking_chart_data.append({
+            'date': date.strftime('%Y-%m-%d'),
+            'bookings': bookings_count
+        })
+    
+    # Popular events
+    popular_events = Event.objects.annotate(
+        booking_count=Count('booking')
+    ).order_by('-booking_count')[:5]
+    
+    context = {
+        'total_events': total_events,
+        'active_events': active_events,
+        'total_bookings': total_bookings,
+        'pending_bookings': pending_bookings,
+        'total_revenue': total_revenue,
+        'revenue_30_days': revenue_30_days,
+        'recent_bookings': recent_bookings,
+        'recent_payments': recent_payments,
+        'pending_whatsapp': pending_whatsapp,
+        'unresolved_inquiries': unresolved_inquiries,
+        'booking_chart_data': json.dumps(booking_chart_data),
+        'popular_events': popular_events,
+    }
+    
+    return render(request, 'admin/dashboard.html', context)
+
+
+@staff_member_required
+def admin_events_list(request):
+    """List all events with filters"""
+    events = Event.objects.select_related('category', 'location', 'created_by').all()
+    
+    # Filters
+    status_filter = request.GET.get('status')
+    category_filter = request.GET.get('category')
+    location_filter = request.GET.get('location')
+    search = request.GET.get('search')
+    
+    if status_filter:
+        events = events.filter(status=status_filter)
+    
+    if category_filter:
+        events = events.filter(category_id=category_filter)
+    
+    if location_filter:
+        events = events.filter(location_id=location_filter)
+    
+    if search:
+        events = events.filter(
+            Q(title__icontains=search) |
+            Q(description__icontains=search) |
+            Q(location__name__icontains=search)
+        )
+    
+    # Pagination
+    paginator = Paginator(events, 20)
+    page_number = request.GET.get('page')
+    events_page = paginator.get_page(page_number)
+    
+    # Filter options
+    categories = Category.objects.filter(is_active=True)
+    locations = Location.objects.all()
+    
+    context = {
+        'events': events_page,
+        'categories': categories,
+        'locations': locations,
+        'status_choices': Event.STATUS_CHOICES,
+        'filters': {
+            'status': status_filter,
+            'category': category_filter,
+            'location': location_filter,
+            'search': search,
+        }
+    }
+    
+    return render(request, 'admin/events/list.html', context)
+
+
+@staff_member_required
+def admin_event_detail(request, event_id):
+    """Event detail view with bookings and analytics"""
+    event = get_object_or_404(Event, id=event_id)
+    
+    # Event statistics
+    bookings = event.booking_set.all()
+    total_bookings = bookings.count()
+    confirmed_bookings = bookings.filter(status__in=['confirmed', 'paid']).count()
+    total_revenue = Payment.objects.filter(
+        booking__event=event, 
+        status='completed'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Recent bookings
+    recent_bookings = bookings.select_related('pricing_tier').order_by('-booked_at')[:10]
+    
+    # Reviews
+    reviews = event.reviews.filter(is_approved=True).order_by('-created_at')[:5]
+    avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+    
+    context = {
+        'event': event,
+        'total_bookings': total_bookings,
+        'confirmed_bookings': confirmed_bookings,
+        'total_revenue': total_revenue,
+        'recent_bookings': recent_bookings,
+        'reviews': reviews,
+        'avg_rating': round(avg_rating, 1),
+    }
+    
+    return render(request, 'admin/events/detail.html', context)
+
+
+@staff_member_required
+def admin_event_create(request):
+    """Create new event"""
+    if request.method == 'POST':
+        form = EventForm(request.POST)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.created_by = request.user
+            event.save()
+            messages.success(request, f'Event "{event.title}" created successfully.')
+            return redirect('admin_event_detail', event_id=event.id)
+    else:
+        form = EventForm()
+    
+    return render(request, 'admin/events/create.html', {'form': form})
+
+
+@staff_member_required
+def admin_event_edit(request, event_id):
+    """Edit existing event"""
+    event = get_object_or_404(Event, id=event_id)
+    
+    if request.method == 'POST':
+        form = EventForm(request.POST, instance=event)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Event "{event.title}" updated successfully.')
+            return redirect('admin_event_detail', event_id=event.id)
+    else:
+        form = EventForm(instance=event)
+    
+    return render(request, 'admin/events/edit.html', {'form': form, 'event': event})
+
+
+@staff_member_required
+@require_POST
+def admin_event_delete(request, event_id):
+    """Delete event"""
+    event = get_object_or_404(Event, id=event_id)
+    event_title = event.title
+    event.delete()
+    messages.success(request, f'Event "{event_title}" deleted successfully.')
+    return redirect('admin_events_list')
+
+
+@staff_member_required
+def admin_bookings_list(request):
+    """List all bookings with filters"""
+    bookings = Booking.objects.select_related('event', 'pricing_tier').all()
+    
+    # Filters
+    status_filter = request.GET.get('status')
+    event_filter = request.GET.get('event')
+    date_filter = request.GET.get('date')
+    search = request.GET.get('search')
+    
+    if status_filter:
+        bookings = bookings.filter(status=status_filter)
+    
+    if event_filter:
+        bookings = bookings.filter(event_id=event_filter)
+    
+    if date_filter:
+        bookings = bookings.filter(booked_at__date=date_filter)
+    
+    if search:
+        bookings = bookings.filter(
+            Q(customer_name__icontains=search) |
+            Q(customer_email__icontains=search) |
+            Q(customer_phone__icontains=search) |
+            Q(booking_id__icontains=search)
+        )
+    
+    # Pagination
+    paginator = Paginator(bookings, 25)
+    page_number = request.GET.get('page')
+    bookings_page = paginator.get_page(page_number)
+    
+    # Filter options
+    events = Event.objects.filter(status='published').order_by('title')
+    
+    context = {
+        'bookings': bookings_page,
+        'events': events,
+        'status_choices': Booking.BOOKING_STATUS,
+        'filters': {
+            'status': status_filter,
+            'event': event_filter,
+            'date': date_filter,
+            'search': search,
+        }
+    }
+    
+    return render(request, 'admin/bookings/list.html', context)
+
+
+@staff_member_required
+def admin_booking_detail(request, booking_id):
+    """Booking detail view"""
+    booking = get_object_or_404(
+        Booking.objects.select_related('event', 'pricing_tier'),
+        booking_id=booking_id
+    )
+    
+    # Get participants
+    participants = booking.participants.all()
+    
+    # Get payments
+    payments = booking.payments.all().order_by('-initiated_at')
+    
+    context = {
+        'booking': booking,
+        'participants': participants,
+        'payments': payments,
+    }
+    
+    return render(request, 'admin/bookings/detail.html', context)
+
+
+@staff_member_required
+@require_POST
+def admin_booking_update_status(request, booking_id):
+    """Update booking status"""
+    booking = get_object_or_404(Booking, booking_id=booking_id)
+    new_status = request.POST.get('status')
+    
+    if new_status in dict(Booking.BOOKING_STATUS):
+        old_status = booking.status
+        booking.status = new_status
+        
+        if new_status == 'confirmed' and old_status != 'confirmed':
+            booking.confirmed_at = timezone.now()
+        
+        booking.save()
+        messages.success(request, f'Booking status updated to {new_status}.')
+    else:
+        messages.error(request, 'Invalid status.')
+    
+    return redirect('admin_booking_detail', booking_id=booking_id)
+
+
+@staff_member_required
+def admin_payments_list(request):
+    """List all payments"""
+    payments = Payment.objects.select_related('booking__event').all()
+    
+    # Filters
+    status_filter = request.GET.get('status')
+    method_filter = request.GET.get('method')
+    date_filter = request.GET.get('date')
+    
+    if status_filter:
+        payments = payments.filter(status=status_filter)
+    
+    if method_filter:
+        payments = payments.filter(payment_method=method_filter)
+    
+    if date_filter:
+        payments = payments.filter(initiated_at__date=date_filter)
+    
+    # Pagination
+    paginator = Paginator(payments, 25)
+    page_number = request.GET.get('page')
+    payments_page = paginator.get_page(page_number)
+    
+    # Summary stats
+    total_completed = payments.filter(status='completed').aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+    
+    total_pending = payments.filter(status='pending').aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+    
+    context = {
+        'payments': payments_page,
+        'status_choices': Payment.PAYMENT_STATUS,
+        'method_choices': Payment.PAYMENT_METHODS,
+        'total_completed': total_completed,
+        'total_pending': total_pending,
+        'filters': {
+            'status': status_filter,
+            'method': method_filter,
+            'date': date_filter,
+        }
+    }
+    
+    return render(request, 'admin/payments/list.html', context)
+
+
+@staff_member_required
+def admin_whatsapp_bookings(request):
+    """Manage WhatsApp bookings"""
+    bookings = WhatsAppBooking.objects.select_related('event', 'processed_by').all()
+    
+    # Filters
+    status_filter = request.GET.get('status', 'new')
+    if status_filter:
+        bookings = bookings.filter(status=status_filter)
+    
+    # Pagination
+    paginator = Paginator(bookings, 20)
+    page_number = request.GET.get('page')
+    bookings_page = paginator.get_page(page_number)
+    
+    context = {
+        'bookings': bookings_page,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'admin/whatsapp/list.html', context)
+
+
+@staff_member_required
+@require_POST
+def admin_whatsapp_process(request, booking_id):
+    """Process WhatsApp booking"""
+    whatsapp_booking = get_object_or_404(WhatsAppBooking, id=booking_id)
+    action = request.POST.get('action')
+    
+    if action == 'approve':
+        # Create actual booking from WhatsApp request
+        booking = Booking.objects.create(
+            event=whatsapp_booking.event,
+            customer_name=whatsapp_booking.customer_name,
+            customer_phone=whatsapp_booking.customer_phone,
+            customer_email=f"{whatsapp_booking.customer_phone}@temp.com",  # Temporary email
+            number_of_participants=whatsapp_booking.participants_count,
+            adults_count=whatsapp_booking.participants_count,
+            base_amount=whatsapp_booking.event.base_price * whatsapp_booking.participants_count,
+            total_amount=whatsapp_booking.event.base_price * whatsapp_booking.participants_count,
+            booking_method='whatsapp',
+            status='confirmed'
+        )
+        
+        whatsapp_booking.booking = booking
+        whatsapp_booking.status = 'approved'
+        whatsapp_booking.processed_by = request.user
+        whatsapp_booking.processed_at = timezone.now()
+        whatsapp_booking.save()
+        
+        messages.success(request, 'WhatsApp booking approved and converted to regular booking.')
+    
+    elif action == 'reject':
+        whatsapp_booking.status = 'rejected'
+        whatsapp_booking.processed_by = request.user
+        whatsapp_booking.processed_at = timezone.now()
+        whatsapp_booking.save()
+        
+        messages.success(request, 'WhatsApp booking rejected.')
+    
+    return redirect('admin_whatsapp_bookings')
+
+
+@staff_member_required
+def admin_reviews_list(request):
+    """Manage reviews"""
+    reviews = Review.objects.select_related('event', 'booking').all()
+    
+    # Filters
+    status_filter = request.GET.get('status')
+    if status_filter == 'approved':
+        reviews = reviews.filter(is_approved=True)
+    elif status_filter == 'pending':
+        reviews = reviews.filter(is_approved=False)
+    
+    # Pagination
+    paginator = Paginator(reviews, 20)
+    page_number = request.GET.get('page')
+    reviews_page = paginator.get_page(page_number)
+    
+    context = {
+        'reviews': reviews_page,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'admin/reviews/list.html', context)
+
+
+@staff_member_required
+@require_POST
+def admin_review_approve(request, review_id):
+    """Approve or reject review"""
+    review = get_object_or_404(Review, id=review_id)
+    action = request.POST.get('action')
+    
+    if action == 'approve':
+        review.is_approved = True
+        messages.success(request, 'Review approved.')
+    elif action == 'reject':
+        review.is_approved = False
+        messages.success(request, 'Review rejected.')
+    
+    review.save()
+    return redirect('admin_reviews_list')
+
+
+@staff_member_required
+def admin_categories_list(request):
+    """Manage categories"""
+    categories = Category.objects.all().order_by('name')
+    
+    context = {
+        'categories': categories,
+    }
+    
+    return render(request, 'admin/categories/list.html', context)
+
+
+@staff_member_required
+def admin_category_create(request):
+    """Create category"""
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Category created successfully.')
+            return redirect('admin_categories_list')
+    else:
+        form = CategoryForm()
+    
+    return render(request, 'admin/categories/create.html', {'form': form})
+
+
+@staff_member_required
+def admin_category_edit(request, category_id):
+    """Edit category"""
+    category = get_object_or_404(Category, id=category_id)
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Category updated successfully.')
+            return redirect('admin_categories_list')
+    else:
+        form = CategoryForm(instance=category)
+    
+    return render(request, 'admin/categories/edit.html', {'form': form, 'category': category})
+
+
+@staff_member_required
+def admin_locations_list(request):
+    """Manage locations"""
+    locations = Location.objects.all().order_by('name')
+    
+    context = {
+        'locations': locations,
+    }
+    
+    return render(request, 'admin/locations/list.html', context)
+
+
+@staff_member_required
+def admin_location_create(request):
+    """Create location"""
+    if request.method == 'POST':
+        form = LocationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Location created successfully.')
+            return redirect('admin_locations_list')
+    else:
+        form = LocationForm()
+    
+    return render(request, 'admin/locations/create.html', {'form': form})
+
+
+@staff_member_required
+def admin_inquiries_list(request):
+    """Manage contact inquiries"""
+    inquiries = ContactInquiry.objects.select_related('event', 'resolved_by').all()
+    
+    # Filters
+    status_filter = request.GET.get('status')
+    if status_filter == 'resolved':
+        inquiries = inquiries.filter(is_resolved=True)
+    elif status_filter == 'unresolved':
+        inquiries = inquiries.filter(is_resolved=False)
+    
+    # Pagination
+    paginator = Paginator(inquiries, 20)
+    page_number = request.GET.get('page')
+    inquiries_page = paginator.get_page(page_number)
+    
+    context = {
+        'inquiries': inquiries_page,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'admin/inquiries/list.html', context)
+
+
+@staff_member_required
+def admin_inquiry_detail(request, inquiry_id):
+    """View and respond to inquiry"""
+    inquiry = get_object_or_404(ContactInquiry, id=inquiry_id)
+    
+    if request.method == 'POST':
+        form = ContactInquiryResponseForm(request.POST)
+        if form.is_valid():
+            inquiry.admin_notes = form.cleaned_data['admin_notes']
+            inquiry.is_resolved = form.cleaned_data['is_resolved']
+            if inquiry.is_resolved and not inquiry.resolved_at:
+                inquiry.resolved_at = timezone.now()
+                inquiry.resolved_by = request.user
+            inquiry.save()
+            
+            messages.success(request, 'Inquiry updated successfully.')
+            return redirect('admin_inquiries_list')
+    else:
+        form = ContactInquiryResponseForm(initial={
+            'admin_notes': inquiry.admin_notes,
+            'is_resolved': inquiry.is_resolved,
+        })
+    
+    return render(request, 'admin/inquiries/detail.html', {'inquiry': inquiry, 'form': form})
+
+
+@staff_member_required
+def admin_newsletter_subscribers(request):
+    """Manage newsletter subscribers"""
+    subscribers = NewsletterSubscription.objects.all().order_by('-subscribed_at')
+    
+    # Pagination
+    paginator = Paginator(subscribers, 50)
+    page_number = request.GET.get('page')
+    subscribers_page = paginator.get_page(page_number)
+    
+    context = {
+        'subscribers': subscribers_page,
+        'total_subscribers': subscribers.filter(is_active=True).count(),
+    }
+    
+    return render(request, 'admin/newsletter/list.html', context)
+
+
+@staff_member_required
+def admin_settings(request):
+    """System settings"""
+    settings = SystemConfiguration.objects.all().order_by('key')
+    
+    if request.method == 'POST':
+        for setting in settings:
+            new_value = request.POST.get(f'setting_{setting.id}')
+            if new_value is not None:
+                setting.value = new_value
+                setting.save()
+        
+        messages.success(request, 'Settings updated successfully.')
+        return redirect('admin_settings')
+    
+    context = {
+        'settings': settings,
+    }
+    
+    return render(request, 'admin/settings.html', context)
+
+
+@staff_member_required
+def admin_analytics(request):
+    """Analytics dashboard"""
+    # Date ranges
+    today = timezone.now().date()
+    last_30_days = today - timedelta(days=30)
+    last_90_days = today - timedelta(days=90)
+    
+    # Revenue analytics
+    daily_revenue = []
+    for i in range(30, 0, -1):
+        date = today - timedelta(days=i)
+        revenue = Payment.objects.filter(
+            status='completed',
+            completed_at__date=date
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        daily_revenue.append({
+            'date': date.strftime('%Y-%m-%d'),
+            'revenue': float(revenue)
+        })
+    
+    # Booking trends
+    booking_trends = []
+    for i in range(12, 0, -1):
+        date = today - timedelta(days=i*30)
+        bookings = Booking.objects.filter(
+            booked_at__date__gte=date,
+            booked_at__date__lt=date + timedelta(days=30)
+        ).count()
+        
+        booking_trends.append({
+            'month': date.strftime('%B'),
+            'bookings': bookings
+        })
+    
+    # Popular destinations
+    popular_locations = Location.objects.annotate(
+        event_count=Count('event'),
+        booking_count=Count('event__booking')
+    ).order_by('-booking_count')[:10]
+    
+    context = {
+        'daily_revenue': json.dumps(daily_revenue),
+        'booking_trends': json.dumps(booking_trends),
+        'popular_locations': popular_locations,
+    }
+    
+    return render(request, 'admin/analytics.html', context)
+
+
+@staff_member_required
+def export_bookings(request):
+    """Export bookings to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="bookings.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        'Booking ID', 'Event', 'Customer Name', 'Email', 'Phone',
+        'Participants', 'Total Amount', 'Status', 'Booking Date'
+    ])
+    
+    bookings = Booking.objects.select_related('event').all()
+    for booking in bookings:
+        writer.writerow([
+            booking.booking_id,
+            booking.event.title,
+            booking.customer_name,
+            booking.customer_email,
+            booking.customer_phone,
+            booking.number_of_participants,
+            booking.total_amount,
+            booking.get_status_display(),
+            booking.booked_at.strftime('%Y-%m-%d %H:%M')
+        ])
+    
+    return response
+
+
+@staff_member_required
+def export_payments(request):
+    """Export payments to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="payments.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        'Payment ID', 'Booking ID', 'Event', 'Amount', 'Method',
+        'Status', 'Transaction Ref', 'Date'
+    ])
+    
+    payments = Payment.objects.select_related('booking__event').all()
+    for payment in payments:
+        writer.writerow([
+            payment.payment_id,
+            payment.booking.booking_id,
+            payment.booking.event.title,
+            payment.amount,
+            payment.get_payment_method_display(),
+            payment.get_status_display(),
+            payment.transaction_reference,
+            payment.initiated_at.strftime('%Y-%m-%d %H:%M')
+        ])
+    
+    return response
+

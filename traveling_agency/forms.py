@@ -544,3 +544,365 @@ class WhatsAppBookingForm(forms.Form):
             'placeholder': 'Any special requests or questions...'
         })
     )
+
+
+from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from .models import (
+    Event, Category, Location, PricingTier, EventImage,
+    SystemConfiguration, ContactInquiry, EventFeature
+)
+
+
+class EventForm(forms.ModelForm):
+    """Form for creating and editing events"""
+    
+    class Meta:
+        model = Event
+        fields = [
+            'title', 'slug', 'description', 'short_description', 
+            'event_type', 'category', 'location', 'start_date', 
+            'end_date', 'duration_days', 'max_participants', 
+            'min_participants', 'base_price', 'child_price', 
+            'vip_price', 'group_discount_percentage', 'includes', 
+            'excludes', 'requirements', 'booking_deadline', 
+            'cancellation_policy', 'whatsapp_booking', 
+            'online_payment', 'status', 'featured'
+        ]
+        
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 6, 'class': 'form-control'}),
+            'short_description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'includes': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'excludes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'requirements': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'cancellation_policy': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'booking_deadline': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'slug': forms.TextInput(attrs={'class': 'form-control'}),
+            'duration_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'max_participants': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'min_participants': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'base_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'child_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'vip_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'group_discount_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'location': forms.Select(attrs={'class': 'form-control'}),
+            'event_type': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+        }
+        
+        labels = {
+            'short_description': 'Short Description (SEO)',
+            'group_discount_percentage': 'Group Discount (%)',
+            'whatsapp_booking': 'Allow WhatsApp Bookings',
+            'online_payment': 'Enable Online Payments',
+        }
+        
+        help_texts = {
+            'slug': 'URL-friendly version of the title. Leave blank to auto-generate.',
+            'duration_days': 'Total duration of the event in days',
+            'booking_deadline': 'Last date/time for accepting bookings',
+            'group_discount_percentage': 'Discount percentage for group bookings',
+            'featured': 'Show this event in featured sections',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter active categories and order by name
+        self.fields['category'].queryset = Category.objects.filter(is_active=True).order_by('name')
+        self.fields['location'].queryset = Location.objects.all().order_by('name')
+        
+        # Make some fields required
+        self.fields['category'].required = True
+        self.fields['location'].required = True
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        booking_deadline = cleaned_data.get('booking_deadline')
+        min_participants = cleaned_data.get('min_participants')
+        max_participants = cleaned_data.get('max_participants')
+        
+        # Validate date ranges
+        if start_date and end_date:
+            if start_date >= end_date:
+                raise ValidationError('End date must be after start date.')
+        
+        if booking_deadline and start_date:
+            if booking_deadline >= start_date:
+                raise ValidationError('Booking deadline must be before event start date.')
+        
+        # Validate participant counts
+        if min_participants and max_participants:
+            if min_participants > max_participants:
+                raise ValidationError('Minimum participants cannot exceed maximum participants.')
+        
+        return cleaned_data
+
+
+class CategoryForm(forms.ModelForm):
+    """Form for creating and editing categories"""
+    
+    class Meta:
+        model = Category
+        fields = ['name', 'slug', 'description', 'icon', 'is_active']
+        
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'slug': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'icon': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., fa-mountain'}),
+        }
+        
+        help_texts = {
+            'slug': 'URL-friendly version of the name. Leave blank to auto-generate.',
+            'icon': 'FontAwesome icon class (optional)',
+        }
+
+
+class LocationForm(forms.ModelForm):
+    """Form for creating and editing locations"""
+    
+    class Meta:
+        model = Location
+        fields = [
+            'name', 'county', 'region', 'latitude', 
+            'longitude', 'description', 'is_popular'
+        ]
+        
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'county': forms.TextInput(attrs={'class': 'form-control'}),
+            'region': forms.Select(attrs={'class': 'form-control'}, choices=[
+                ('coast', 'Coast'),
+                ('central', 'Central'),
+                ('eastern', 'Eastern'),
+                ('northern', 'Northern'),
+                ('nyanza', 'Nyanza'),
+                ('rift_valley', 'Rift Valley'),
+                ('western', 'Western'),
+                ('nairobi', 'Nairobi'),
+            ]),
+            'latitude': forms.NumberInput(attrs={'class': 'form-control', 'step': 'any'}),
+            'longitude': forms.NumberInput(attrs={'class': 'form-control', 'step': 'any'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+        }
+        
+        help_texts = {
+            'latitude': 'Decimal degrees (optional)',
+            'longitude': 'Decimal degrees (optional)',
+            'is_popular': 'Show in popular destinations',
+        }
+
+
+class PricingTierForm(forms.ModelForm):
+    """Form for creating and editing pricing tiers"""
+    
+    class Meta:
+        model = PricingTier
+        fields = [
+            'tier_type', 'name', 'description', 'price', 
+            'max_capacity', 'features', 'is_active'
+        ]
+        
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'max_capacity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'features': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'tier_type': forms.Select(attrs={'class': 'form-control'}),
+        }
+        
+        help_texts = {
+            'features': 'List the features included in this tier (one per line or comma-separated)',
+            'max_capacity': 'Maximum number of participants for this tier',
+        }
+
+
+class EventImageForm(forms.ModelForm):
+    """Form for uploading event images"""
+    
+    class Meta:
+        model = EventImage
+        fields = ['image', 'alt_text', 'is_primary', 'order']
+        
+        widgets = {
+            'image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'alt_text': forms.TextInput(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+        }
+        
+        help_texts = {
+            'alt_text': 'Alternative text for accessibility',
+            'is_primary': 'Use as main image for this event',
+            'order': 'Display order (lower numbers first)',
+        }
+
+
+class SystemConfigurationForm(forms.ModelForm):
+    """Form for editing system configuration"""
+    
+    class Meta:
+        model = SystemConfiguration
+        fields = ['value', 'description', 'is_active']
+        
+        widgets = {
+            'value': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+        }
+
+
+class ContactInquiryResponseForm(forms.Form):
+    """Form for responding to contact inquiries"""
+    
+    admin_notes = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
+        required=False,
+        help_text='Internal notes about this inquiry'
+    )
+    
+    is_resolved = forms.BooleanField(
+        required=False,
+        help_text='Mark as resolved'
+    )
+    
+    response_message = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 6, 'class': 'form-control'}),
+        required=False,
+        help_text='Response message to send to the customer (optional)'
+    )
+    
+    send_response = forms.BooleanField(
+        required=False,
+        help_text='Send email response to customer'
+    )
+
+
+class EventSearchForm(forms.Form):
+    """Form for searching and filtering events"""
+    
+    search = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search events...'
+        })
+    )
+    
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.filter(is_active=True),
+        required=False,
+        empty_label="All Categories",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    location = forms.ModelChoiceField(
+        queryset=Location.objects.all(),
+        required=False,
+        empty_label="All Locations",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    status = forms.ChoiceField(
+        choices=[('', 'All Status')] + Event.STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    date_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+    
+    date_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+
+
+class BookingSearchForm(forms.Form):
+    """Form for searching and filtering bookings"""
+    
+    search = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search by name, email, phone, or booking ID...'
+        })
+    )
+    
+    status = forms.ChoiceField(
+        choices=[('', 'All Status')] + Event.STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    event = forms.ModelChoiceField(
+        queryset=Event.objects.filter(status='published'),
+        required=False,
+        empty_label="All Events",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        help_text="Booking date"
+    )
+
+
+class PaymentFilterForm(forms.Form):
+    """Form for filtering payments"""
+    
+    status = forms.ChoiceField(
+        choices=[('', 'All Status')] + [('completed', 'Completed'), ('pending', 'Pending'), ('failed', 'Failed')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    method = forms.ChoiceField(
+        choices=[('', 'All Methods')] + [('mpesa', 'M-Pesa'), ('bank_transfer', 'Bank Transfer'), ('card', 'Card')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        help_text="Payment date"
+    )
+
+
+class BulkActionForm(forms.Form):
+    """Form for bulk actions on events/bookings"""
+    
+    ACTION_CHOICES = [
+        ('', 'Select Action'),
+        ('publish', 'Publish'),
+        ('suspend', 'Suspend'),
+        ('delete', 'Delete'),
+        ('export', 'Export'),
+    ]
+    
+    action = forms.ChoiceField(
+        choices=ACTION_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    selected_items = forms.CharField(
+        widget=forms.HiddenInput()
+    )
+    
+    confirm = forms.BooleanField(
+        required=False,
+        help_text="Confirm this action"
+    )

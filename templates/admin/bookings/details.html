@@ -1,0 +1,410 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}Booking {{ booking.booking_id|slice:":8" }} - Travel Kenya Admin{% endblock %}
+
+{% block page_title %}Booking Details{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:dashboard' %}">Admin</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin:bookings_list' %}">Bookings</a></li>
+        <li class="breadcrumb-item active">{{ booking.booking_id|slice:":8" }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Booking #{{ booking.booking_id|slice:":8" }}...</h2>
+    <div class="btn-group">
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-cog me-2"></i>Actions
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="confirmed">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-check text-success me-2"></i>Confirm Booking
+                        </button>
+                    </form>
+                </li>
+                <li>
+                    <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="cancelled">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-times text-danger me-2"></i>Cancel Booking
+                        </button>
+                    </form>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2"></i>Send Email</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print Voucher</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Booking Information -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Booking Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Booking ID:</th>
+                                <td><code>{{ booking.booking_id }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Event:</th>
+                                <td>
+                                    <a href="{% url 'admin_event_detail' booking.event.id %}" class="text-decoration-none">
+                                        {{ booking.event.title }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Event Date:</th>
+                                <td>{{ booking.event.start_date|date:"F d, Y" }} - {{ booking.event.end_date|date:"F d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Duration:</th>
+                                <td>{{ booking.event.duration_days }} day{{ booking.event.duration_days|pluralize }}</td>
+                            </tr>
+                            <tr>
+                                <th>Location:</th>
+                                <td>{{ booking.event.location.name }}, {{ booking.event.location.county }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Status:</th>
+                                <td>
+                                    <span class="badge bg-{% if booking.status == 'confirmed' or booking.status == 'paid' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %} fs-6">
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Booking Method:</th>
+                                <td><span class="badge bg-info">{{ booking.get_booking_method_display }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Booked Date:</th>
+                                <td>{{ booking.booked_at|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            {% if booking.confirmed_at %}
+                            <tr>
+                                <th>Confirmed Date:</th>
+                                <td>{{ booking.confirmed_at|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <th>Participants:</th>
+                                <td>
+                                    <strong>{{ booking.number_of_participants }} total</strong>
+                                    {% if booking.adults_count or booking.children_count %}
+                                        <br>
+                                        <small class="text-muted">
+                                            {% if booking.adults_count %}{{ booking.adults_count }} adult{{ booking.adults_count|pluralize }}{% endif %}
+                                            {% if booking.children_count %}, {{ booking.children_count }} child{{ booking.children_count|pluralize:"ren" }}{% endif %}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    Customer Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Name:</th>
+                                <td>{{ booking.customer_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Email:</th>
+                                <td><a href="mailto:{{ booking.customer_email }}">{{ booking.customer_email }}</a></td>
+                            </tr>
+                            <tr>
+                                <th>Phone:</th>
+                                <td><a href="tel:{{ booking.customer_phone }}">{{ booking.customer_phone }}</a></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            {% if booking.customer_address %}
+                            <tr>
+                                <th width="40%">Address:</th>
+                                <td>{{ booking.customer_address }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if booking.emergency_contact_name %}
+                            <tr>
+                                <th>Emergency Contact:</th>
+                                <td>
+                                    {{ booking.emergency_contact_name }}
+                                    {% if booking.emergency_contact_phone %}
+                                        <br><a href="tel:{{ booking.emergency_contact_phone }}">{{ booking.emergency_contact_phone }}</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+
+                {% if booking.special_requests %}
+                <div class="mt-3">
+                    <h6>Special Requests:</h6>
+                    <p class="text-muted">{{ booking.special_requests }}</p>
+                </div>
+                {% endif %}
+
+                {% if booking.dietary_requirements %}
+                <div class="mt-3">
+                    <h6>Dietary Requirements:</h6>
+                    <p class="text-muted">{{ booking.dietary_requirements }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Participants -->
+        {% if participants %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    Participants ({{ participants.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Age</th>
+                                <th>ID/Passport</th>
+                                <th>Medical Conditions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for participant in participants %}
+                                <tr>
+                                    <td>{{ participant.name }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ participant.get_participant_type_display }}</span>
+                                    </td>
+                                    <td>{% if participant.age %}{{ participant.age }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        {% if participant.id_number %}ID: {{ participant.id_number }}{% endif %}
+                                        {% if participant.passport_number %}Passport: {{ participant.passport_number }}{% endif %}
+                                        {% if not participant.id_number and not participant.passport_number %}-{% endif %}
+                                    </td>
+                                    <td>{% if participant.medical_conditions %}{{ participant.medical_conditions }}{% else %}-{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Pricing Breakdown -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    Pricing Breakdown
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Base Amount:</th>
+                        <td class="text-end">KSh {{ booking.base_amount|floatformat:0 }}</td>
+                    </tr>
+                    {% if booking.discount_amount > 0 %}
+                    <tr class="text-success">
+                        <th>Discount:</th>
+                        <td class="text-end">-KSh {{ booking.discount_amount|floatformat:0 }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if booking.tax_amount > 0 %}
+                    <tr>
+                        <th>Tax:</th>
+                        <td class="text-end">KSh {{ booking.tax_amount|floatformat:0 }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr class="border-top">
+                        <th class="fs-5">Total Amount:</th>
+                        <td class="text-end fs-5"><strong>KSh {{ booking.total_amount|floatformat:0 }}</strong></td>
+                    </tr>
+                </table>
+
+                {% if booking.pricing_tier %}
+                <div class="mt-3">
+                    <h6>Pricing Tier:</h6>
+                    <span class="badge bg-primary">{{ booking.pricing_tier.name }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Payment History -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-credit-card me-2"></i>
+                    Payment History
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if payments %}
+                    {% for payment in payments %}
+                        <div class="d-flex justify-content-between align-items-start mb-3 p-3 border rounded">
+                            <div>
+                                <h6 class="mb-1">{{ payment.get_payment_method_display }}</h6>
+                                <small class="text-muted">{{ payment.initiated_at|date:"M d, Y H:i" }}</small>
+                                {% if payment.transaction_reference %}
+                                    <br><small class="text-muted">Ref: {{ payment.transaction_reference }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                <div class="fs-6 fw-bold">KSh {{ payment.amount|floatformat:0 }}</div>
+                                <span class="badge bg-{% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}warning{% elif payment.status == 'failed' %}danger{% else %}secondary{% endif %}">
+                                    {{ payment.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No payments recorded</p>
+                {% endif %}
+
+                <!-- Payment Summary -->
+                {% if payments %}
+                    <div class="border-top pt-3 mt-3">
+                        {% with total_paid=payments|dictsort:"status"|first.amount %}
+                            <div class="d-flex justify-content-between">
+                                <strong>Total Paid:</strong>
+                                <strong class="text-success">
+                                    KSh {% for payment in payments %}{% if payment.status == 'completed' %}{{ payment.amount|floatformat:0 }}{% endif %}{% endfor %}
+                                </strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <strong>Balance Due:</strong>
+                                <strong class="text-danger">
+                                    KSh {{ booking.total_amount|floatformat:0 }}
+                                </strong>
+                            </div>
+                        {% endwith %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#statusModal">
+                        <i class="fas fa-edit me-2"></i>Update Status
+                    </button>
+                    
+                    <a href="mailto:{{ booking.customer_email }}?subject=Regarding your booking {{ booking.booking_id|slice:':8' }}" class="btn btn-outline-primary">
+                        <i class="fas fa-envelope me-2"></i>Send Email
+                    </a>
+                    
+                    <a href="tel:{{ booking.customer_phone }}" class="btn btn-outline-success">
+                        <i class="fas fa-phone me-2"></i>Call Customer
+                    </a>
+                    
+                    <button type="button" class="btn btn-outline-secondary">
+                        <i class="fas fa-print me-2"></i>Print Voucher
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Add Note
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Booking Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Current Status: <span class="badge bg-warning">{{ booking.get_status_display }}</span></label>
+                        <select name="status" id="status" class="form-select" required>
+                            <option value="">Select new status...</option>
+                            {% for value, label in booking.BOOKING_STATUS %}
+                                <option value="{{ value }}" {% if value == booking.status %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Changing status will automatically update timestamps and may trigger email notifications.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

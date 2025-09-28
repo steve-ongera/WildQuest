@@ -1,0 +1,257 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}Dashboard - Travel Kenya Admin{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Key Metrics Cards -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ total_events }}</h3>
+                    <p class="mb-0 opacity-75">Total Events</p>
+                </div>
+                <div class="text-end">
+                    <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ total_bookings }}</h3>
+                    <p class="mb-0 opacity-75">Total Bookings</p>
+                </div>
+                <div class="text-end">
+                    <i class="fas fa-ticket-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ pending_bookings }}</h3>
+                    <p class="mb-0 opacity-75">Pending Bookings</p>
+                </div>
+                <div class="text-end">
+                    <i class="fas fa-hourglass-half fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stats-card danger">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">KSh {{ total_revenue|floatformat:0 }}</h3>
+                    <p class="mb-0 opacity-75">Total Revenue</p>
+                </div>
+                <div class="text-end">
+                    <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Revenue Chart -->
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Bookings Over Time (Last 30 Days)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="bookingsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Quick Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Active Events</span>
+                    <span class="badge bg-primary">{{ active_events }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Revenue (30 days)</span>
+                    <span class="text-success fw-bold">KSh {{ revenue_30_days|floatformat:0 }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>WhatsApp Requests</span>
+                    <span class="badge bg-warning">{{ pending_whatsapp }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Unresolved Inquiries</span>
+                    <span class="badge bg-danger">{{ unresolved_inquiries }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Popular Events -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-fire me-2"></i>
+                    Popular Events
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if popular_events %}
+                    {% for event in popular_events %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="mb-0">{{ event.title|truncatechars:30 }}</h6>
+                                <small class="text-muted">{{ event.location.name }}</small>
+                            </div>
+                            <span class="badge bg-primary">{{ event.booking_count }} bookings</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No events with bookings yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent Bookings
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_bookings %}
+                    {% for booking in recent_bookings %}
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ booking.customer_name }}</h6>
+                                <p class="mb-1 text-muted small">{{ booking.event.title|truncatechars:40 }}</p>
+                                <small class="text-muted">{{ booking.booked_at|timesince }} ago</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'paid' %}primary{% else %}secondary{% endif %}">
+                                    {{ booking.get_status_display }}
+                                </span>
+                                <div class="small text-muted mt-1">KSh {{ booking.total_amount|floatformat:0 }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No recent bookings.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'admin_event_create' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>New Event
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'admin_bookings_list' %}?status=pending" class="btn btn-warning w-100">
+                            <i class="fas fa-clock me-2"></i>Pending Bookings
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'admin_whatsapp_bookings' %}?status=new" class="btn btn-success w-100">
+                            <i class="fab fa-whatsapp me-2"></i>WhatsApp Queue
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'admin_export_bookings' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-download me-2"></i>Export Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Bookings Chart
+const ctx = document.getElementById('bookingsChart').getContext('2d');
+const bookingData = {{ booking_chart_data|safe }};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: bookingData.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
+        datasets: [{
+            label: 'Bookings',
+            data: bookingData.map(item => item.bookings),
+            borderColor: '#1e40af',
+            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

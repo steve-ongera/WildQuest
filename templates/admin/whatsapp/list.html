@@ -1,0 +1,270 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}WhatsApp Bookings - Travel Kenya Admin{% endblock %}
+
+{% block page_title %}WhatsApp Bookings{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:dashboard' %}">Admin</a></li>
+        <li class="breadcrumb-item active" aria-current="page">WhatsApp Bookings</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">WhatsApp Booking Requests</h2>
+    <div class="btn-group">
+        <span class="badge bg-success fs-6 me-2">
+            <i class="fab fa-whatsapp me-1"></i>
+            {{ bookings|length }} request{{ bookings|length|pluralize }}
+        </span>
+    </div>
+</div>
+
+<!-- Status Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="btn-group" role="group">
+            <a href="?status=new" class="btn btn-{% if status_filter == 'new' %}primary{% else %}outline-primary{% endif %}">
+                <i class="fas fa-clock me-2"></i>New ({{ bookings|length }})
+            </a>
+            <a href="?status=approved" class="btn btn-{% if status_filter == 'approved' %}success{% else %}outline-success{% endif %}">
+                <i class="fas fa-check me-2"></i>Approved
+            </a>
+            <a href="?status=rejected" class="btn btn-{% if status_filter == 'rejected' %}danger{% else %}outline-danger{% endif %}">
+                <i class="fas fa-times me-2"></i>Rejected
+            </a>
+            <a href="?" class="btn btn-{% if not status_filter %}secondary{% else %}outline-secondary{% endif %}">
+                <i class="fas fa-list me-2"></i>All
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- WhatsApp Bookings List -->
+<div class="row">
+    {% if bookings %}
+        {% for whatsapp_booking in bookings %}
+            <div class="col-md-6 col-xl-4 mb-4">
+                <div class="card h-100 {% if whatsapp_booking.status == 'new' %}border-warning{% elif whatsapp_booking.status == 'approved' %}border-success{% elif whatsapp_booking.status == 'rejected' %}border-danger{% endif %}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fab fa-whatsapp text-success me-2"></i>
+                            {{ whatsapp_booking.customer_name }}
+                        </h6>
+                        <span class="badge bg-{% if whatsapp_booking.status == 'new' %}warning{% elif whatsapp_booking.status == 'approved' %}success{% elif whatsapp_booking.status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                            {{ whatsapp_booking.status|title }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6 class="text-primary">{{ whatsapp_booking.event.title }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ whatsapp_booking.event.start_date|date:"M d, Y" }}
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Contact:</strong><br>
+                            <i class="fas fa-phone me-1"></i>
+                            <a href="tel:{{ whatsapp_booking.customer_phone }}" class="text-decoration-none">
+                                {{ whatsapp_booking.customer_phone }}
+                            </a>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Participants:</strong> {{ whatsapp_booking.participants_count }}
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Message:</strong>
+                            <div class="bg-light p-2 rounded small">
+                                {{ whatsapp_booking.message|truncatechars:150 }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Received {{ whatsapp_booking.created_at|timesince }} ago
+                            </small>
+                        </div>
+
+                        {% if whatsapp_booking.processed_by %}
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>
+                                    Processed by {{ whatsapp_booking.processed_by.get_full_name|default:whatsapp_booking.processed_by.username }}
+                                    <br>
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ whatsapp_booking.processed_at|date:"M d, Y H:i" }}
+                                </small>
+                            </div>
+                        {% endif %}
+
+                        {% if whatsapp_booking.booking %}
+                            <div class="mb-3">
+                                <div class="alert alert-success py-2">
+                                    <small>
+                                        <i class="fas fa-link me-1"></i>
+                                        Converted to booking: 
+                                        <a href="{% url 'admin:booking_detail' whatsapp_booking.booking.booking_id %}" class="text-decoration-none">
+                                            {{ whatsapp_booking.booking.booking_id|slice:":8" }}...
+                                        </a>
+                                    </small>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if whatsapp_booking.status == 'new' %}
+                        <div class="card-footer">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <form method="post" action="{% url 'admin:whatsapp_process' whatsapp_booking.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                            <i class="fas fa-check me-1"></i>Approve
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="col-6">
+                                    <form method="post" action="{% url 'admin:whatsapp_process' whatsapp_booking.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-danger btn-sm w-100">
+                                            <i class="fas fa-times me-1"></i>Reject
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <a href="https://wa.me/{{ whatsapp_booking.customer_phone|slice:'1:' }}?text=Hello {{ whatsapp_booking.customer_name }}, regarding your inquiry about {{ whatsapp_booking.event.title }}..." 
+                                   target="_blank" class="btn btn-outline-success btn-sm w-100">
+                                    <i class="fab fa-whatsapp me-1"></i>Reply on WhatsApp
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        {% if bookings.has_other_pages %}
+            <div class="col-12">
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        {% if bookings.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ bookings.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in bookings.paginator.page_range %}
+                            {% if bookings.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > bookings.number|add:'-3' and num < bookings.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if bookings.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ bookings.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fab fa-whatsapp fa-3x text-muted mb-3"></i>
+                    <h5>No WhatsApp Booking Requests</h5>
+                    <p class="text-muted">
+                        {% if status_filter %}
+                            No {{ status_filter }} WhatsApp booking requests found.
+                        {% else %}
+                            No WhatsApp booking requests have been received yet.
+                        {% endif %}
+                    </p>
+                    {% if status_filter %}
+                        <a href="?" class="btn btn-primary">View All Requests</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Help Card -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-question-circle me-2"></i>
+            How WhatsApp Bookings Work
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fab fa-whatsapp fa-2x text-success mb-2"></i>
+                    <h6>1. Customer Sends Message</h6>
+                    <p class="text-muted small">Customers send booking requests via WhatsApp using the contact button on events.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-check-circle fa-2x text-primary mb-2"></i>
+                    <h6>2. Admin Reviews</h6>
+                    <p class="text-muted small">Review the request details and approve or reject based on availability and requirements.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-ticket-alt fa-2x text-warning mb-2"></i>
+                    <h6>3. Booking Created</h6>
+                    <p class="text-muted small">Approved requests automatically create confirmed bookings in the system.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh page every 30 seconds if viewing new requests
+{% if status_filter == 'new' %}
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+{% endif %}
+
+// Confirm approval/rejection
+document.querySelectorAll('form[action*="whatsapp_process"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const action = form.querySelector('input[name="action"]').value;
+        const customerName = form.closest('.card').querySelector('.card-header h6').textContent.trim();
+        
+        if (!confirm(`Are you sure you want to ${action} the WhatsApp booking request from ${customerName}?`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}
