@@ -360,7 +360,7 @@ import os
 from .models import Booking
 
 def generate_booking_receipt_pdf(request, booking_id):
-    """Generate and download PDF receipt for booking"""
+    """Generate and download compact PDF receipt for booking"""
     booking = get_object_or_404(
         Booking.objects.select_related('event', 'pricing_tier', 'event__location', 'event__category')
         .prefetch_related('participants', 'payments'),
@@ -372,13 +372,13 @@ def generate_booking_receipt_pdf(request, booking_id):
         if not request.user.is_staff:
             raise Http404("You don't have permission to access this receipt.")
     
-    # Generate QR Code for booking verification
+    # Generate compact QR Code for booking verification
     qr_data = f"WQ-{booking.booking_id}"
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=4,  # Smaller box size for compact receipt
+        border=2,    # Smaller border
     )
     qr.add_data(qr_data)
     qr.make(fit=True)
@@ -405,29 +405,34 @@ def generate_booking_receipt_pdf(request, booking_id):
             'phone': '+254 712 345 678',
             'email': 'info@wildquest.co.ke',
             'website': 'www.wildquest.co.ke',
-            'registration': 'CR/2024/001234',  # Company registration number
+            'registration': 'CR/2024/001234',
         }
     }
     
     # Render HTML template
-    template = get_template('bookings/receipt_pdf.html')
+    template = get_template('bookings/receipt_pdf.html')  # Updated template name
     html = template.render(context)
     
-    # Create PDF
+    # Create PDF with compact settings
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="WildQuest_Receipt_{booking.booking_id}.pdf"'
     
-    # Generate PDF
-    pisa_status = pisa.CreatePDF(html, dest=response)
+    # Generate PDF with optimized settings for small receipt
+    pisa_status = pisa.CreatePDF(
+        html, 
+        dest=response,
+        encoding='utf-8',
+        show_error_as_pdf=True
+    )
     
     if pisa_status.err:
-        return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return HttpResponse('Error generating receipt. Please try again or contact support.')
     
     return response
 
 
 def booking_receipt_preview(request, booking_id):
-    """Preview the receipt before downloading"""
+    """Preview the compact receipt before downloading"""
     booking = get_object_or_404(
         Booking.objects.select_related('event', 'pricing_tier', 'event__location', 'event__category')
         .prefetch_related('participants', 'payments'),
@@ -443,9 +448,9 @@ def booking_receipt_preview(request, booking_id):
     qr_data = f"WQ-{booking.booking_id}"
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=6,  # Slightly larger for preview
+        border=2,
     )
     qr.add_data(qr_data)
     qr.make(fit=True)
@@ -475,24 +480,31 @@ def booking_receipt_preview(request, booking_id):
     return render(request, 'bookings/receipt_preview.html', context)
 
 
-# Admin view for approving receipts (you can extend this)
-def admin_approve_receipt(request, booking_id):
-    """Admin view to approve/stamp receipts"""
+# Utility function to verify QR codes (for admin use)
+def admin_approve_receipt(request, qr_data):
+    """Verify booking from QR code scan"""
     if not request.user.is_staff:
         raise Http404("Permission denied")
     
-    booking = get_object_or_404(Booking, booking_id=booking_id)
-    
-    if request.method == 'POST':
-        # Add approval logic here
-        # You could add an 'is_receipt_approved' field to your Booking model
-        messages.success(request, f'Receipt for booking {booking.booking_id} has been approved.')
-        return redirect('admin:your_app_booking_changelist')  # Redirect to admin
-    
-    context = {
-        'booking': booking,
-    }
-    return render(request, 'admin/approve_receipt.html', context)
+    try:
+        # Extract booking ID from QR data
+        if qr_data.startswith('WQ-'):
+            booking_id = qr_data[3:]  # Remove 'WQ-' prefix
+            booking = get_object_or_404(Booking, booking_id=booking_id)
+            
+            context = {
+                'booking': booking,
+                'verification_time': timezone.now(),
+                'verified_by': request.user,
+            }
+            return render(request, 'admin/booking_verification.html', context)
+        else:
+            messages.error(request, 'Invalid QR code format.')
+            return redirect('index')
+            
+    except Exception as e:
+        messages.error(request, f'Error verifying booking: {str(e)}')
+        return redirect('index')
 
 def whatsapp_booking(request, event_slug):
     """Handle WhatsApp booking requests"""
