@@ -1,9 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - WildQuest Travel Kenya</title>
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'img/logo.png' %}" type="image/png">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
@@ -265,7 +268,8 @@
             <!-- Header -->
             <div class="login-header">
                 <div class="brand-logo">
-                    <i class="bi bi-compass"></i>
+                    <!-- Replace compass icon with logo.png -->
+                    <img src="{% static 'img/logo.png' %}" alt="WildQuest Logo" style="width: 60px; height: 60px; border-radius: 50%;">
                 </div>
                 <h1 class="brand-title">WildQuest Travel Kenya</h1>
                 <p class="brand-subtitle">Admin Dashboard</p>
