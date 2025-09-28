@@ -1,16 +1,19 @@
-<!-- Event Create Template (admin/events/create.html) -->
+
+
+<!-- Event Edit Template (admin/events/edit.html) -->
 {% extends 'admin/admin_base.html' %}
 
-{% block title %}Create Event - WildQuest Kenya Admin{% endblock %}
+{% block title %}Edit {{ event.title }} - WildQuest Kenya Admin{% endblock %}
 
-{% block page_title %}Create New Event{% endblock %}
+{% block page_title %}Edit Event{% endblock %}
 
 {% block breadcrumbs %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Admin</a></li>
         <li class="breadcrumb-item"><a href="{% url 'admin_events_list' %}">Events</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Create Event</li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_event_detail' event.id %}">{{ event.title|truncatechars:20 }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit</li>
     </ol>
 </nav>
 {% endblock %}
@@ -19,13 +22,28 @@
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="mb-0">Create New Event</h2>
-        <p class="text-muted mb-0">Add a new adventure or experience to WildQuest Kenya</p>
+        <h2 class="mb-0">Edit Event</h2>
+        <p class="text-muted mb-0">{{ event.title }}</p>
     </div>
-    <a href="{% url 'admin_events_list' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-2"></i>Back to Events
-    </a>
+    <div class="btn-group">
+        <a href="{% url 'admin_event_detail' event.id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-eye me-2"></i>View Event
+        </a>
+        <a href="{% url 'admin_events_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Events
+        </a>
+    </div>
 </div>
+
+<!-- Status Alert -->
+{% if event.current_bookings > 0 %}
+<div class="alert alert-warning mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span><strong>Warning:</strong> This event has {{ event.current_bookings }} existing booking{{ event.current_bookings|pluralize }}. Changes may affect booked customers.</span>
+    </div>
+</div>
+{% endif %}
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -105,6 +123,12 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    {% if event.current_bookings > 0 %}
+                    <div class="alert alert-info mb-3">
+                        <small><i class="bi bi-info-circle me-1"></i> Be careful when changing dates - this event has existing bookings.</small>
+                    </div>
+                    {% endif %}
+                    
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Start Date & Time <span class="text-danger">*</span></label>
@@ -151,6 +175,12 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    {% if event.current_bookings > 0 %}
+                    <div class="alert alert-warning mb-3">
+                        <small><i class="bi bi-exclamation-triangle me-1"></i> Current bookings: {{ event.current_bookings }}. Ensure max capacity is not less than current bookings.</small>
+                    </div>
+                    {% endif %}
+                    
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Maximum Participants <span class="text-danger">*</span></label>
@@ -268,6 +298,38 @@
 
         <!-- Sidebar -->
         <div class="col-lg-4">
+            <!-- Current Status -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 text-dark">
+                        <i class="bi bi-info me-2"></i>
+                        Current Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-4">
+                            <div class="p-2 bg-light rounded">
+                                <div class="fw-bold text-primary">{{ event.current_bookings }}</div>
+                                <small class="text-muted">Bookings</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 bg-light rounded">
+                                <div class="fw-bold text-success">{{ event.available_spots }}</div>
+                                <small class="text-muted">Available</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 bg-light rounded">
+                                <div class="fw-bold text-info">{{ event.max_participants }}</div>
+                                <small class="text-muted">Capacity</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Event Settings -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-0 py-3">
@@ -330,21 +392,28 @@
                 </div>
             </div>
 
-            <!-- Help & Tips -->
+            <!-- Event History -->
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-header bg-transparent border-0 py-3">
                     <h6 class="mb-0 text-dark">
-                        <i class="bi bi-lightbulb me-2"></i>
-                        Tips for Success
+                        <i class="bi bi-clock-history me-2"></i>
+                        Event History
                     </h6>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled mb-0 small">
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Use descriptive titles that include location</li>
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Add high-quality photos to attract bookings</li>
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Set realistic capacity based on logistics</li>
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Include clear cancellation policies</li>
-                        <li class="mb-0"><i class="bi bi-check text-success me-2"></i>Enable both payment methods for flexibility</li>
+                        <li class="mb-2">
+                            <strong>Created:</strong> {{ event.created_at|date:"M d, Y g:i A" }}
+                        </li>
+                        <li class="mb-2">
+                            <strong>Last Updated:</strong> {{ event.updated_at|date:"M d, Y g:i A" }}
+                        </li>
+                        <li class="mb-2">
+                            <strong>Created By:</strong> {{ event.created_by.get_full_name|default:event.created_by.username }}
+                        </li>
+                        <li class="mb-0">
+                            <strong>Event ID:</strong> #{{ event.id }}
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -357,9 +426,9 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center py-4">
                     <button type="submit" class="btn btn-primary btn-lg me-3" style="background-color: var(--primary-color); border-color: var(--primary-color);">
-                        <i class="bi bi-plus-circle me-2"></i>Create Event
+                        <i class="bi bi-check-circle me-2"></i>Update Event
                     </button>
-                    <a href="{% url 'admin_events_list' %}" class="btn btn-outline-secondary btn-lg">
+                    <a href="{% url 'admin_event_detail' event.id %}" class="btn btn-outline-secondary btn-lg">
                         <i class="bi bi-x-circle me-2"></i>Cancel
                     </a>
                 </div>

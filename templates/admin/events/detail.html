@@ -1,0 +1,422 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}{{ event.title }} - WildQuest Kenya Admin{% endblock %}
+
+{% block page_title %}Event Details{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Admin</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_events_list' %}">Events</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ event.title|truncatechars:30 }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Header Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        {% if event.featured %}
+            <i class="bi bi-star-fill text-warning me-2 fs-4"></i>
+        {% endif %}
+        <div>
+            <h2 class="mb-0">{{ event.title }}</h2>
+            <p class="text-muted mb-0">{{ event.category.name }} • {{ event.location.name }}</p>
+        </div>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'admin_event_edit' event.id %}" class="btn btn-primary" style="background-color: var(--primary-color); border-color: var(--primary-color);">
+            <i class="bi bi-pencil me-2"></i>Edit Event
+        </a>
+        <button type="button" class="btn btn-outline-danger" onclick="confirmDelete('{{ event.title }}', '{% url 'admin_event_delete' event.id %}')">
+            <i class="bi bi-trash me-2"></i>Delete
+        </button>
+    </div>
+</div>
+
+<!-- Event Status Alert -->
+{% if event.status != 'published' %}
+<div class="alert alert-{% if event.status == 'draft' %}warning{% elif event.status == 'suspended' %}danger{% else %}secondary{% endif %} mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-{% if event.status == 'draft' %}exclamation-triangle{% elif event.status == 'suspended' %}pause-circle{% else %}info-circle{% endif %} me-2"></i>
+        <span>This event is currently <strong>{{ event.get_status_display }}</strong> and not visible to customers.</span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Key Metrics Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="display-6 text-primary mb-2">
+                    <i class="bi bi-ticket-perforated"></i>
+                </div>
+                <h3 class="mb-1">{{ total_bookings }}</h3>
+                <p class="text-muted mb-0">Total Bookings</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="display-6 text-success mb-2">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <h3 class="mb-1">{{ confirmed_bookings }}</h3>
+                <p class="text-muted mb-0">Confirmed</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="display-6 text-info mb-2">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <h3 class="mb-1">KSh {{ total_revenue|floatformat:0 }}</h3>
+                <p class="text-muted mb-0">Total Revenue</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="display-6 text-warning mb-2">
+                    <i class="bi bi-star"></i>
+                </div>
+                <h3 class="mb-1">{{ avg_rating }}</h3>
+                <p class="text-muted mb-0">Avg Rating</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Event Details -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 text-dark">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Event Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Description</h6>
+                        <p class="mb-0">{{ event.description }}</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <h6 class="text-muted mb-2">Start Date</h6>
+                                <p class="mb-0 fw-semibold">{{ event.start_date|date:"M d, Y" }}</p>
+                                <small class="text-muted">{{ event.start_date|time:"g:i A" }}</small>
+                            </div>
+                            
+                            <div class="col-6">
+                                <h6 class="text-muted mb-2">End Date</h6>
+                                <p class="mb-0 fw-semibold">{{ event.end_date|date:"M d, Y" }}</p>
+                                <small class="text-muted">{{ event.end_date|time:"g:i A" }}</small>
+                            </div>
+                            
+                            <div class="col-6">
+                                <h6 class="text-muted mb-2">Duration</h6>
+                                <p class="mb-0">{{ event.duration_days }} day{{ event.duration_days|pluralize }}</p>
+                            </div>
+                            
+                            <div class="col-6">
+                                <h6 class="text-muted mb-2">Base Price</h6>
+                                <p class="mb-0 fw-semibold">KSh {{ event.base_price|floatformat:0 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <!-- Capacity Information -->
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h6 class="text-muted mb-2">Booking Capacity</h6>
+                        <div class="d-flex justify-content-between small text-muted mb-2">
+                            <span>{{ event.current_bookings }}/{{ event.max_participants }} participants</span>
+                            <span>{% widthratio event.current_bookings event.max_participants 100 %}% full</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" 
+                                 style="width: {% widthratio event.current_bookings event.max_participants 100 %}%; background-color: var(--primary-color);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 text-end">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div class="fw-bold text-primary">{{ event.available_spots }}</div>
+                                    <small class="text-muted">Available</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div class="fw-bold text-success">{{ event.current_bookings }}</div>
+                                    <small class="text-muted">Booked</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-dark">
+                        <i class="bi bi-people me-2"></i>
+                        Recent Bookings
+                    </h5>
+                    <span class="badge bg-light text-dark">{{ total_bookings }} total</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_bookings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0 ps-4">Customer</th>
+                                    <th class="border-0">Participants</th>
+                                    <th class="border-0">Amount</th>
+                                    <th class="border-0">Status</th>
+                                    <th class="border-0 pe-4">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in recent_bookings %}
+                                <tr class="border-top">
+                                    <td class="ps-4">
+                                        <div>
+                                            <h6 class="mb-0">{{ booking.customer_name }}</h6>
+                                            <small class="text-muted">{{ booking.customer_email }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ booking.number_of_participants }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>KSh {{ booking.total_amount|floatformat:0 }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning text-dark{% elif booking.status == 'paid' %}primary{% else %}secondary{% endif %}">
+                                            {{ booking.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="pe-4">
+                                        <small class="text-muted">{{ booking.booked_at|date:"M d, Y" }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                        <h6 class="text-muted">No bookings yet</h6>
+                        <p class="text-muted mb-0">Bookings will appear here once customers start booking this event.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Event Status -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0 text-dark">
+                    <i class="bi bi-gear me-2"></i>
+                    Event Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="text-muted small">Current Status</label>
+                        <div class="mt-1">
+                            <span class="badge rounded-pill bg-{% if event.status == 'published' %}success{% elif event.status == 'draft' %}warning text-dark{% elif event.status == 'suspended' %}danger{% else %}secondary{% endif %} px-3 py-2">
+                                <i class="bi bi-{% if event.status == 'published' %}check-circle{% elif event.status == 'draft' %}pencil{% elif event.status == 'suspended' %}pause-circle{% else %}circle{% endif %} me-1"></i>
+                                {{ event.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-6">
+                        <label class="text-muted small">Event Type</label>
+                        <p class="mb-0 fw-semibold">{{ event.get_event_type_display }}</p>
+                    </div>
+                    
+                    <div class="col-6">
+                        <label class="text-muted small">Created</label>
+                        <p class="mb-0">{{ event.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="text-muted small">Booking Deadline</label>
+                        <p class="mb-0 fw-semibold{% if event.booking_deadline < now %} text-danger{% endif %}">
+                            {{ event.booking_deadline|date:"M d, Y g:i A" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Summary -->
+        {% if reviews %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0 text-dark">
+                    <i class="bi bi-star me-2"></i>
+                    Customer Reviews
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for review in reviews %}
+                <div class="mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0">{{ review.reviewer_name }}</h6>
+                        <div class="text-warning">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-1">{{ review.title }}</p>
+                    <p class="mb-0 small">{{ review.comment|truncatechars:100 }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0 text-dark">
+                    <i class="bi bi-lightning me-2"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'admin_event_edit' event.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-2"></i>Edit Event
+                    </a>
+                    
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="bi bi-people me-2"></i>View All Bookings
+                    </a>
+                    
+                    <a href="#" class="btn btn-outline-info">
+                        <i class="bi bi-download me-2"></i>Export Data
+                    </a>
+                    
+                    <button type="button" class="btn btn-outline-danger" onclick="confirmDelete('{{ event.title }}', '{% url 'admin_event_delete' event.id %}')">
+                        <i class="bi bi-trash me-2"></i>Delete Event
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-dark">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-3 fs-4"></i>
+                    <div>
+                        <p class="mb-1">Are you sure you want to delete <strong id="eventTitle" class="text-dark"></strong>?</p>
+                        <p class="text-muted small mb-0">This action cannot be undone. All bookings and associated data will be permanently removed.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Delete Event
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(eventTitle, deleteUrl) {
+    document.getElementById('eventTitle').textContent = eventTitle;
+    document.getElementById('deleteForm').action = deleteUrl;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+
+<style>
+.btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 107, 104, 0.04);
+}
+
+.badge.bg-light {
+    background-color: #f8f9fa !important;
+    color: #64748b !important;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
