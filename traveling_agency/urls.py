@@ -49,6 +49,14 @@ urlpatterns = [
     path('admin-events/<int:event_id>/', views.admin_event_detail, name='admin_event_detail'),
     path('admin-events/<int:event_id>/edit/', views.admin_event_edit, name='admin_event_edit'),
     path('admin-events/<int:event_id>/delete/', views.admin_event_delete, name='admin_event_delete'),
+    path('admin-events/<int:event_id>/bookings/', views.admin_event_bookings, name='admin_event_bookings'),
+    
+    # PDF exports
+    path('admin-events/<int:event_id>/export-bookings/', views.export_event_bookings_pdf, name='export_event_bookings_pdf'),
+    path('admin-bookings/<uuid:booking_id>/export-voucher/', views.export_single_booking_pdf, name='export_single_booking_pdf'),
+    
+    # Image management (optional - for deleting images)
+    path('admin-events/images/<int:image_id>/delete/', views.delete_event_image, name='delete_event_image'),
     
     # Bookings Management
     path('admin-bookings/', views.admin_bookings_list, name='admin_bookings_list'),

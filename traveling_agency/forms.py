@@ -555,8 +555,38 @@ from .models import (
 )
 
 
+from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from .models import (
+    Event, Category, Location, PricingTier, EventImage,
+    SystemConfiguration, ContactInquiry, EventFeature
+)
+
+
 class EventForm(forms.ModelForm):
     """Form for creating and editing events"""
+    
+    # Add image upload fields
+    primary_image = forms.ImageField(
+        required=False,
+        help_text="Main event image (will be displayed prominently)",
+        widget=forms.FileInput(attrs={
+            'class': 'form-control', 
+            'accept': 'image/*',
+            'id': 'id_primary_image'
+        })
+    )
+    
+    additional_images = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*',
+            'id': 'id_additional_images'
+        }),
+        help_text="Upload multiple images (optional)"
+    )
     
     class Meta:
         model = Event
@@ -572,28 +602,109 @@ class EventForm(forms.ModelForm):
         ]
         
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 6, 'class': 'form-control'}),
-            'short_description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'includes': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-            'excludes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'requirements': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'cancellation_policy': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'booking_deadline': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'slug': forms.TextInput(attrs={'class': 'form-control'}),
-            'duration_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
-            'max_participants': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
-            'min_participants': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
-            'base_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
-            'child_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
-            'vip_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
-            'group_discount_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'description': forms.Textarea(attrs={
+                'rows': 6, 
+                'class': 'form-control',
+                'placeholder': 'Provide a detailed description of the event...'
+            }),
+            'short_description': forms.Textarea(attrs={
+                'rows': 3, 
+                'class': 'form-control',
+                'placeholder': 'Brief description for search results and listings (max 300 characters)',
+                'maxlength': 300
+            }),
+            'includes': forms.Textarea(attrs={
+                'rows': 4, 
+                'class': 'form-control',
+                'placeholder': 'List what is included:\n- Accommodation\n- Meals\n- Transportation\n- Guide services'
+            }),
+            'excludes': forms.Textarea(attrs={
+                'rows': 3, 
+                'class': 'form-control',
+                'placeholder': 'List what is NOT included:\n- Personal expenses\n- Travel insurance\n- Tips'
+            }),
+            'requirements': forms.Textarea(attrs={
+                'rows': 3, 
+                'class': 'form-control',
+                'placeholder': 'List participant requirements:\n- Age restrictions\n- Fitness level\n- Required documents'
+            }),
+            'cancellation_policy': forms.Textarea(attrs={
+                'rows': 4, 
+                'class': 'form-control',
+                'placeholder': 'Define cancellation terms and refund policy...'
+            }),
+            'start_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local', 
+                'class': 'form-control',
+                'id': 'id_start_date'
+            }),
+            'end_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local', 
+                'class': 'form-control',
+                'id': 'id_end_date'
+            }),
+            'booking_deadline': forms.DateTimeInput(attrs={
+                'type': 'datetime-local', 
+                'class': 'form-control',
+                'id': 'id_booking_deadline'
+            }),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Mount Kenya Hiking Adventure',
+                'id': 'id_title'
+            }),
+            'slug': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'mount-kenya-hiking-adventure',
+                'id': 'id_slug'
+            }),
+            'duration_days': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'min': 1,
+                'placeholder': 'Number of days'
+            }),
+            'max_participants': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'min': 1,
+                'placeholder': 'Maximum capacity'
+            }),
+            'min_participants': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'min': 1,
+                'placeholder': 'Minimum to run event'
+            }),
+            'base_price': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.01', 
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'child_price': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.01', 
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'vip_price': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.01', 
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'group_discount_percentage': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.01', 
+                'min': '0', 
+                'max': '100',
+                'placeholder': '0.00'
+            }),
             'category': forms.Select(attrs={'class': 'form-control'}),
             'location': forms.Select(attrs={'class': 'form-control'}),
             'event_type': forms.Select(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
+            'whatsapp_booking': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'online_payment': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'featured': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         
         labels = {
@@ -601,6 +712,7 @@ class EventForm(forms.ModelForm):
             'group_discount_percentage': 'Group Discount (%)',
             'whatsapp_booking': 'Allow WhatsApp Bookings',
             'online_payment': 'Enable Online Payments',
+            'featured': 'Featured Event',
         }
         
         help_texts = {
@@ -613,15 +725,62 @@ class EventForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
         # Filter active categories and order by name
-        self.fields['category'].queryset = Category.objects.filter(is_active=True).order_by('name')
+        self.fields['category'].queryset = Category.objects.filter(
+            is_active=True
+        ).order_by('name')
+        
         self.fields['location'].queryset = Location.objects.all().order_by('name')
         
         # Make some fields required
         self.fields['category'].required = True
         self.fields['location'].required = True
+        
+        # Add empty label for select fields
+        self.fields['category'].empty_label = "Select a category..."
+        self.fields['location'].empty_label = "Select a location..."
+        self.fields['event_type'].empty_label = "Select event type..."
+    
+    def clean_slug(self):
+        """Validate and generate slug if empty"""
+        slug = self.cleaned_data.get('slug')
+        title = self.cleaned_data.get('title')
+        
+        if not slug and title:
+            # Auto-generate slug from title
+            slug = title.lower().replace(' ', '-')
+            slug = ''.join(c for c in slug if c.isalnum() or c == '-')
+            while '--' in slug:
+                slug = slug.replace('--', '-')
+            slug = slug.strip('-')
+        
+        # Check for uniqueness
+        existing = Event.objects.filter(slug=slug)
+        if self.instance.pk:
+            existing = existing.exclude(pk=self.instance.pk)
+        
+        if existing.exists():
+            raise ValidationError(f'An event with slug "{slug}" already exists.')
+        
+        return slug
+    
+    def clean_primary_image(self):
+        """Validate primary image"""
+        image = self.cleaned_data.get('primary_image')
+        
+        if image:
+            if image.size > 5 * 1024 * 1024:  # 5MB limit
+                raise ValidationError('Image file size must be less than 5MB.')
+            
+            allowed_types = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
+            if hasattr(image, 'content_type') and image.content_type not in allowed_types:
+                raise ValidationError('Only JPEG, PNG, and WebP images are allowed.')
+        
+        return image
     
     def clean(self):
+        """Validate form data"""
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')

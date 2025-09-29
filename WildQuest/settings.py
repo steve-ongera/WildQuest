@@ -30,7 +30,11 @@ INSTALLED_APPS = [
     'traveling_agency',
 ]
 
+# Sitemap settings
+SITE_ID = 1
+ 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',

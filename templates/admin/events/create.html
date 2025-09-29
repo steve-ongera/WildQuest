@@ -1,4 +1,3 @@
-<!-- Event Create Template (admin/events/create.html) -->
 {% extends 'admin/admin_base.html' %}
 
 {% block title %}Create Event - WildQuest Kenya Admin{% endblock %}
@@ -33,6 +32,39 @@
     <div class="row g-4">
         <!-- Main Content -->
         <div class="col-lg-8">
+            <!-- Event Images -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 text-dark">
+                        <i class="bi bi-image me-2"></i>
+                        Event Images
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Primary Image <span class="text-danger">*</span></label>
+                            {{ form.primary_image }}
+                            <div class="form-text">Main event image (recommended size: 1200x800px)</div>
+                            {% if form.primary_image.errors %}
+                                <div class="invalid-feedback d-block">{{ form.primary_image.errors.0 }}</div>
+                            {% endif %}
+                            <div id="primaryImagePreview" class="mt-3"></div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Additional Images</label>
+                            {{ form.additional_images }}
+                            <div class="form-text">Upload multiple images for the gallery (optional)</div>
+                            {% if form.additional_images.errors %}
+                                <div class="invalid-feedback d-block">{{ form.additional_images.errors.0 }}</div>
+                            {% endif %}
+                            <div id="additionalImagesPreview" class="mt-3 row g-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Basic Information -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-0 py-3">
@@ -48,6 +80,15 @@
                             {{ form.title }}
                             {% if form.title.errors %}
                                 <div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">URL Slug</label>
+                            {{ form.slug }}
+                            <div class="form-text">{{ form.slug.help_text }}</div>
+                            {% if form.slug.errors %}
+                                <div class="invalid-feedback d-block">{{ form.slug.errors.0 }}</div>
                             {% endif %}
                         </div>
                         
@@ -340,11 +381,11 @@
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Use high-quality images (min 1200px wide)</li>
+                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Upload at least 3-5 images for gallery</li>
                         <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Use descriptive titles that include location</li>
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Add high-quality photos to attract bookings</li>
                         <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Set realistic capacity based on logistics</li>
-                        <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Include clear cancellation policies</li>
-                        <li class="mb-0"><i class="bi bi-check text-success me-2"></i>Enable both payment methods for flexibility</li>
+                        <li class="mb-0"><i class="bi bi-check text-success me-2"></i>Include clear cancellation policies</li>
                     </ul>
                 </div>
             </div>
@@ -356,7 +397,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center py-4">
-                    <button type="submit" class="btn btn-primary btn-lg me-3" style="background-color: var(--primary-color); border-color: var(--primary-color);">
+                    <button type="submit" class="btn btn-primary btn-lg me-3">
                         <i class="bi bi-plus-circle me-2"></i>Create Event
                     </button>
                     <a href="{% url 'admin_events_list' %}" class="btn btn-outline-secondary btn-lg">
@@ -371,12 +412,75 @@
 
 {% block extra_js %}
 <script>
-// Auto-generate slug from title
 document.addEventListener('DOMContentLoaded', function() {
+    // Image Preview for Primary Image
+    const primaryImageInput = document.getElementById('id_primary_image');
+    if (primaryImageInput) {
+        primaryImageInput.addEventListener('change', function(e) {
+            const preview = document.getElementById('primaryImagePreview');
+            preview.innerHTML = '';
+            
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    preview.innerHTML = `
+                        <div class="position-relative d-inline-block">
+                            <img src="${event.target.result}" class="img-thumbnail" style="max-height: 200px;">
+                            <span class="badge bg-primary position-absolute top-0 start-0 m-2">Primary</span>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+    }
+    
+    // Image Preview for Additional Images
+    const additionalImagesInput = document.getElementById('id_additional_images');
+    if (additionalImagesInput) {
+        additionalImagesInput.addEventListener('change', function(e) {
+            const preview = document.getElementById('additionalImagesPreview');
+            preview.innerHTML = '';
+            
+            if (e.target.files) {
+                Array.from(e.target.files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const col = document.createElement('div');
+                        col.className = 'col-4';
+                        col.innerHTML = `
+                            <div class="position-relative">
+                                <img src="${event.target.result}" class="img-thumbnail w-100" style="height: 150px; object-fit: cover;">
+                                <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${index + 1}</span>
+                            </div>
+                        `;
+                        preview.appendChild(col);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        });
+    }
+    
+    // Auto-generate slug from title
     const titleField = document.getElementById('id_title');
-    if (titleField) {
+    const slugField = document.getElementById('id_slug');
+    if (titleField && slugField) {
         titleField.addEventListener('input', function() {
-            // You can add slug generation logic here if needed
+            if (!slugField.value || slugField.dataset.autoGenerated === 'true') {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                slugField.value = slug;
+                slugField.dataset.autoGenerated = 'true';
+            }
+        });
+        
+        slugField.addEventListener('input', function() {
+            if (this.value) {
+                this.dataset.autoGenerated = 'false';
+            }
         });
     }
     
@@ -385,20 +489,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const endDateField = document.getElementById('id_end_date');
     const bookingDeadlineField = document.getElementById('id_booking_deadline');
     
-    if (startDateField && endDateField) {
-        function validateDates() {
-            const startDate = new Date(startDateField.value);
-            const endDate = new Date(endDateField.value);
-            
-            if (startDate && endDate && endDate <= startDate) {
-                endDateField.setCustomValidity('End date must be after start date');
-            } else {
-                endDateField.setCustomValidity('');
-            }
+    function validateDates() {
+        const startDate = new Date(startDateField.value);
+        const endDate = new Date(endDateField.value);
+        const deadline = new Date(bookingDeadlineField.value);
+        
+        if (startDate && endDate && endDate <= startDate) {
+            endDateField.setCustomValidity('End date must be after start date');
+        } else {
+            endDateField.setCustomValidity('');
         }
         
+        if (deadline && startDate && deadline >= startDate) {
+            bookingDeadlineField.setCustomValidity('Booking deadline must be before start date');
+        } else {
+            bookingDeadlineField.setCustomValidity('');
+        }
+    }
+    
+    if (startDateField && endDateField) {
         startDateField.addEventListener('change', validateDates);
         endDateField.addEventListener('change', validateDates);
+        bookingDeadlineField.addEventListener('change', validateDates);
     }
 });
 </script>
@@ -423,30 +535,6 @@ document.addEventListener('DOMContentLoaded', function() {
 .btn-primary:hover {
     background-color: var(--primary-dark) !important;
     border-color: var(--primary-dark) !important;
-}
-
-.card {
-    transition: transform 0.2s ease-in-out;
-}
-
-.form-label.fw-semibold {
-    color: #495057;
-    margin-bottom: 0.5rem;
-}
-
-.form-text {
-    color: #6c757d;
-    font-size: 0.875rem;
-}
-
-.invalid-feedback {
-    color: #dc3545;
-    font-size: 0.875rem;
-}
-
-textarea.form-control {
-    min-height: 100px;
-    resize: vertical;
 }
 </style>
 {% endblock %}

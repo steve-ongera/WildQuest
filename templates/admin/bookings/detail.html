@@ -7,8 +7,8 @@
 {% block breadcrumbs %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'admin:dashboard' %}">Admin</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'admin:bookings_list' %}">Bookings</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Admin</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_bookings_list' %}">Bookings</a></li>
         <li class="breadcrumb-item active">{{ booking.booking_id|slice:":8" }}</li>
     </ol>
 </nav>
@@ -25,7 +25,7 @@
             </button>
             <ul class="dropdown-menu">
                 <li>
-                    <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+                    <form method="post" action="{% url 'admin_booking_update_status' booking.booking_id %}">
                         {% csrf_token %}
                         <input type="hidden" name="status" value="confirmed">
                         <button type="submit" class="dropdown-item">
@@ -34,7 +34,7 @@
                     </form>
                 </li>
                 <li>
-                    <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+                    <form method="post" action="{% url 'admin_booking_update_status' booking.booking_id %}">
                         {% csrf_token %}
                         <input type="hidden" name="status" value="cancelled">
                         <button type="submit" class="dropdown-item">
@@ -318,22 +318,19 @@
                 {% endif %}
 
                 <!-- Payment Summary -->
+                <!-- Payment Summary -->
                 {% if payments %}
                     <div class="border-top pt-3 mt-3">
-                        {% with total_paid=payments|dictsort:"status"|first.amount %}
-                            <div class="d-flex justify-content-between">
-                                <strong>Total Paid:</strong>
-                                <strong class="text-success">
-                                    KSh {% for payment in payments %}{% if payment.status == 'completed' %}{{ payment.amount|floatformat:0 }}{% endif %}{% endfor %}
-                                </strong>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <strong>Balance Due:</strong>
-                                <strong class="text-danger">
-                                    KSh {{ booking.total_amount|floatformat:0 }}
-                                </strong>
-                            </div>
-                        {% endwith %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>Total Paid:</strong>
+                            <strong class="text-success">KSh {{ total_paid|floatformat:0 }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <strong>Balance Due:</strong>
+                            <strong class="{% if balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
+                                KSh {{ balance_due|floatformat:0 }}
+                            </strong>
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -382,7 +379,7 @@
                 <h5 class="modal-title">Update Booking Status</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'admin:booking_update_status' booking.booking_id %}">
+            <form method="post" action="{% url 'admin_booking_update_status' booking.booking_id %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">

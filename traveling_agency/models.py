@@ -4,6 +4,18 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from decimal import Decimal
 import uuid
+from django.utils.text import slugify
+
+class SEOMixin(models.Model):
+    """Reusable SEO fields for any model"""
+    meta_title = models.CharField(max_length=60, blank=True, help_text="60 characters max")
+    meta_description = models.CharField(max_length=160, blank=True, help_text="160 characters max")
+    meta_keywords = models.CharField(max_length=255, blank=True)
+    og_image = models.ImageField(upload_to='seo/', blank=True, help_text="1200x630px recommended")
+    
+    class Meta:
+        abstract = True
+
 
 class Category(models.Model):
     """Categories for different types of events/experiences"""
@@ -98,6 +110,38 @@ class Event(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        if not self.meta_title:
+            self.meta_title = f"{self.title} - WildQuest Kenya"
+        if not self.meta_description:
+            self.meta_description = self.description[:155] + "..."
+        super().save(*args, **kwargs)
+    
+    def get_schema_markup(self):
+        """Generate JSON-LD structured data"""
+        return {
+            "@context": "https://schema.org",
+            "@type": "TouristAttraction",
+            "name": self.title,
+            "description": self.description,
+            "image": self.og_image.url if self.og_image else "",
+            "offers": {
+                "@type": "Offer",
+                "price": str(self.base_price),
+                "priceCurrency": "KES"
+            },
+            "location": {
+                "@type": "Place",
+                "name": self.location,
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressCountry": "KE"
+                }
+            }
+        }
     
     class Meta:
         ordering = ['start_date']

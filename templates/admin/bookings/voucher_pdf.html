@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Voucher - {{ booking.booking_id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 11pt;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 4px solid #0d6b68;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #0d6b68;
+            margin: 0;
+            font-size: 28pt;
+        }
+        
+        .header .tagline {
+            color: #666;
+            font-size: 11pt;
+            margin-top: 5px;
+        }
+        
+        .voucher-title {
+            text-align: center;
+            background: #0d6b68;
+            color: white;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        
+        .voucher-title h2 {
+            margin: 0;
+            font-size: 20pt;
+        }
+        
+        .booking-id {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #0d6b68;
+            margin-bottom: 20px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: #0d6b68;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            margin-bottom: 10px;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: #555;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .value {
+            color: #333;
+        }
+        
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .pricing-table td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .pricing-table .label-col {
+            font-weight: bold;
+            width: 60%;
+        }
+        
+        .pricing-table .amount-col {
+            text-align: right;
+            width: 40%;
+        }
+        
+        .pricing-table .total-row {
+            background: #f8f9fa;
+            font-weight: bold;
+            font-size: 13pt;
+            border-top: 2px solid #0d6b68;
+        }
+        
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .participants-table th,
+        .participants-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        
+        .participants-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        
+        .status-confirmed { background: #28a745; color: white; }
+        .status-paid { background: #007bff; color: white; }
+        .status-pending { background: #ffc107; color: #333; }
+        
+        .important-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            text-align: center;
+            color: #666;
+            font-size: 9pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>WildQuest Kenya</h1>
+        <div class="tagline">Discover the Heart of Adventure</div>
+    </div>
+    
+    <div class="voucher-title">
+        <h2>BOOKING CONFIRMATION VOUCHER</h2>
+    </div>
+    
+    <div class="booking-id">
+        <strong>Booking ID:</strong> <code>{{ booking.booking_id }}</code><br>
+        <strong>Booking Date:</strong> {{ booking.booked_at|date:"F d, Y \a\t H:i" }}<br>
+        <strong>Status:</strong> <span class="status-badge status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+    </div>
+    
+    <!-- Event Information -->
+    <div class="section">
+        <div class="section-title">Event Information</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">Event Name:</span>
+                <span class="value">{{ booking.event.title }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Event Type:</span>
+                <span class="value">{{ booking.event.get_event_type_display }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Location:</span>
+                <span class="value">{{ booking.event.location.name }}, {{ booking.event.location.county }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Duration:</span>
+                <span class="value">{{ booking.event.duration_days }} day{{ booking.event.duration_days|pluralize }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Start Date:</span>
+                <span class="value">{{ booking.event.start_date|date:"F d, Y" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">End Date:</span>
+                <span class="value">{{ booking.event.end_date|date:"F d, Y" }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Customer Information -->
+    <div class="section">
+        <div class="section-title">Customer Information</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">Name:</span>
+                <span class="value">{{ booking.customer_name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Email:</span>
+                <span class="value">{{ booking.customer_email }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Phone:</span>
+                <span class="value">{{ booking.customer_phone }}</span>
+            </div>
+            {% if booking.customer_address %}
+            <div class="info-item">
+                <span class="label">Address:</span>
+                <span class="value">{{ booking.customer_address }}</span>
+            </div>
+            {% endif %}
+            {% if booking.emergency_contact_name %}
+            <div class="info-item">
+                <span class="label">Emergency Contact:</span>
+                <span class="value">{{ booking.emergency_contact_name }} - {{ booking.emergency_contact_phone }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Participants -->
+    <div class="section">
+        <div class="section-title">Participants ({{ booking.number_of_participants }} Total)</div>
+        {% if booking.participants.all %}
+        <table class="participants-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Age</th>
+                    <th>ID/Passport</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant in booking.participants.all %}
+                <tr>
+                    <td>{{ participant.name }}</td>
+                    <td>{{ participant.get_participant_type_display }}</td>
+                    <td>{% if participant.age %}{{ participant.age }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if participant.id_number %}{{ participant.id_number }}{% endif %}
+                        {% if participant.passport_number %}{{ participant.passport_number }}{% endif %}
+                        {% if not participant.id_number and not participant.passport_number %}-{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>
+            <strong>Adults:</strong> {{ booking.adults_count }}<br>
+            <strong>Children:</strong> {{ booking.children_count }}
+        </p>
+        {% endif %}
+    </div>
+    
+    <!-- Pricing Breakdown -->
+    <div class="section">
+        <div class="section-title">Pricing Breakdown</div>
+        <table class="pricing-table">
+            <tr>
+                <td class="label-col">Base Amount:</td>
+                <td class="amount-col">KSh {{ booking.base_amount|floatformat:0 }}</td>
+            </tr>
+            {% if booking.discount_amount > 0 %}
+            <tr>
+                <td class="label-col">Discount:</td>
+                <td class="amount-col" style="color: #28a745;">-KSh {{ booking.discount_amount|floatformat:0 }}</td>
+            </tr>
+            {% endif %}
+            {% if booking.tax_amount > 0 %}
+            <tr>
+                <td class="label-col">Tax:</td>
+                <td class="amount-col">KSh {{ booking.tax_amount|floatformat:0 }}</td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td class="label-col">Total Amount:</td>
+                <td class="amount-col">KSh {{ booking.total_amount|floatformat:0 }}</td>
+            </tr>
+        </table>
+        
+        {% if booking.pricing_tier %}
+        <p style="margin-top: 10px;">
+            <span class="label">Pricing Tier:</span> {{ booking.pricing_tier.name }}
+        </p>
+        {% endif %}
+    </div>
+    
+    <!-- Special Requests -->
+    {% if booking.special_requests or booking.dietary_requirements %}
+    <div class="section">
+        <div class="section-title">Special Information</div>
+        {% if booking.special_requests %}
+        <div class="info-item">
+            <span class="label">Special Requests:</span>
+            <p class="value">{{ booking.special_requests }}</p>
+        </div>
+        {% endif %}
+        {% if booking.dietary_requirements %}
+        <div class="info-item">
+            <span class="label">Dietary Requirements:</span>
+            <p class="value">{{ booking.dietary_requirements }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Important Notice -->
+    <div class="important-note">
+        <strong>Important Notice:</strong>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+            <li>Please bring this voucher with you on the day of the event</li>
+            <li>Arrive at least 30 minutes before the scheduled start time</li>
+            <li>Bring valid ID/Passport for all participants</li>
+            <li>Contact us immediately if you need to make any changes</li>
+        </ul>
+    </div>
+    
+    <div class="footer">
+        <p><strong>Contact Us:</strong></p>
+        <p>Email: info@wildquestkenya.com | Phone: +254 XXX XXX XXX</p>
+        <p>www.wildquestkenya.com</p>
+        <p style="margin-top: 15px;">Thank you for choosing WildQuest Kenya!</p>
+    </div>
+</body>
+</html>

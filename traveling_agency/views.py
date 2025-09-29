@@ -924,6 +924,9 @@ from django.utils import timezone
 from datetime import timedelta, date
 import json
 from decimal import Decimal
+from django.db.models import Sum, Q, Avg
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
 
 from .models import (
     Event, Booking, Payment, Category, Location, 
@@ -1227,13 +1230,36 @@ def admin_event_detail(request, event_id):
 
 @staff_member_required
 def admin_event_create(request):
-    """Create new event"""
+    """Create new event with image uploads"""
     if request.method == 'POST':
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, request.FILES)
         if form.is_valid():
             event = form.save(commit=False)
             event.created_by = request.user
             event.save()
+            
+            # Handle primary image
+            primary_image = request.FILES.get('primary_image')
+            if primary_image:
+                EventImage.objects.create(
+                    event=event,
+                    image=primary_image,
+                    is_primary=True,
+                    order=0,
+                    alt_text=f"{event.title} - Main Image"
+                )
+            
+            # Handle additional images
+            additional_images = request.FILES.getlist('additional_images')
+            for idx, image in enumerate(additional_images, start=1):
+                EventImage.objects.create(
+                    event=event,
+                    image=image,
+                    is_primary=False,
+                    order=idx,
+                    alt_text=f"{event.title} - Image {idx}"
+                )
+            
             messages.success(request, f'Event "{event.title}" created successfully.')
             return redirect('admin_event_detail', event_id=event.id)
     else:
@@ -1244,20 +1270,185 @@ def admin_event_create(request):
 
 @staff_member_required
 def admin_event_edit(request, event_id):
-    """Edit existing event"""
+    """Edit existing event with image management"""
     event = get_object_or_404(Event, id=event_id)
     
     if request.method == 'POST':
-        form = EventForm(request.POST, instance=event)
+        form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
-            form.save()
+            event = form.save()
+            
+            # Handle new primary image
+            primary_image = request.FILES.get('primary_image')
+            if primary_image:
+                # Remove old primary image
+                EventImage.objects.filter(event=event, is_primary=True).delete()
+                # Create new primary image
+                EventImage.objects.create(
+                    event=event,
+                    image=primary_image,
+                    is_primary=True,
+                    order=0,
+                    alt_text=f"{event.title} - Main Image"
+                )
+            
+            # Handle additional images
+            additional_images = request.FILES.getlist('additional_images')
+            if additional_images:
+                # Get current max order
+                max_order_result = EventImage.objects.filter(event=event).aggregate(
+                    max_order=Sum('order')
+                )
+                max_order = max_order_result['max_order'] or 0
+                
+                for idx, image in enumerate(additional_images, start=1):
+                    EventImage.objects.create(
+                        event=event,
+                        image=image,
+                        is_primary=False,
+                        order=max_order + idx,
+                        alt_text=f"{event.title} - Image {max_order + idx}"
+                    )
+            
             messages.success(request, f'Event "{event.title}" updated successfully.')
             return redirect('admin_event_detail', event_id=event.id)
     else:
         form = EventForm(instance=event)
     
-    return render(request, 'admin/events/edit.html', {'form': form, 'event': event})
+    # Get existing images
+    existing_images = event.images.all()
+    
+    return render(request, 'admin/events/edit.html', {
+        'form': form,
+        'event': event,
+        'existing_images': existing_images
+    })
 
+@staff_member_required
+def admin_event_bookings(request, event_id):
+    """View all bookings for a specific event"""
+    event = get_object_or_404(Event, id=event_id)
+    
+    # Get all bookings with related data
+    bookings = Booking.objects.filter(event=event).select_related(
+        'pricing_tier'
+    ).prefetch_related(
+        'participants', 'payments'
+    ).order_by('-booked_at')
+    
+    # Calculate statistics
+    total_bookings = bookings.count()
+    confirmed_bookings = bookings.filter(status='confirmed').count()
+    paid_bookings = bookings.filter(status='paid').count()
+    cancelled_bookings = bookings.filter(status='cancelled').count()
+    
+    total_revenue = bookings.filter(
+        status__in=['confirmed', 'paid']
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    total_participants = bookings.filter(
+        status__in=['confirmed', 'paid']
+    ).aggregate(total=Sum('number_of_participants'))['total'] or 0
+    
+    context = {
+        'event': event,
+        'bookings': bookings,
+        'total_bookings': total_bookings,
+        'confirmed_bookings': confirmed_bookings,
+        'paid_bookings': paid_bookings,
+        'cancelled_bookings': cancelled_bookings,
+        'total_revenue': total_revenue,
+        'total_participants': total_participants,
+    }
+    
+    return render(request, 'admin/events/bookings.html', context)
+
+
+@staff_member_required
+def delete_event_image(request, image_id):
+    """Delete an event image via AJAX"""
+    if request.method == 'POST':
+        image = get_object_or_404(EventImage, id=image_id)
+        event_id = image.event.id
+        image.delete()
+        messages.success(request, 'Image deleted successfully.')
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+from django.utils import timezone
+from weasyprint import HTML
+@staff_member_required
+def export_event_bookings_pdf(request, event_id):
+    """Export event bookings to PDF"""
+    event = get_object_or_404(Event, id=event_id)
+    
+    # Get all bookings with related data
+    bookings = Booking.objects.filter(event=event).select_related(
+        'pricing_tier'
+    ).prefetch_related(
+        'participants', 'payments'
+    ).order_by('-booked_at')
+    
+    # Calculate statistics
+    total_bookings = bookings.count()
+    confirmed_bookings = bookings.filter(status='confirmed').count()
+    paid_bookings = bookings.filter(status='paid').count()
+    
+    total_revenue = bookings.filter(
+        status__in=['confirmed', 'paid']
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    total_participants = bookings.filter(
+        status__in=['confirmed', 'paid']
+    ).aggregate(total=Sum('number_of_participants'))['total'] or 0
+    
+    # Render HTML template
+    html_string = render_to_string('admin/events/bookings_pdf.html', {
+        'event': event,
+        'bookings': bookings,
+        'total_bookings': total_bookings,
+        'confirmed_bookings': confirmed_bookings,
+        'paid_bookings': paid_bookings,
+        'total_revenue': total_revenue,
+        'total_participants': total_participants,
+        'now': timezone.now(),
+    })
+    
+    # Generate PDF
+    html = HTML(string=html_string)
+    result = html.write_pdf()
+    
+    # Create response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="event_{event.id}_bookings.pdf"'
+    response.write(result)
+    
+    return response
+
+
+@staff_member_required
+def export_single_booking_pdf(request, booking_id):
+    """Export single booking voucher/confirmation to PDF"""
+    booking = get_object_or_404(
+        Booking.objects.select_related('event', 'event__location', 'pricing_tier').prefetch_related('participants', 'payments'),
+        booking_id=booking_id
+    )
+    
+    # Render HTML template
+    html_string = render_to_string('admin/bookings/voucher_pdf.html', {
+        'booking': booking,
+    })
+    
+    # Generate PDF
+    html = HTML(string=html_string)
+    result = html.write_pdf()
+    
+    # Create response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="booking_{booking.booking_id}.pdf"'
+    response.write(result)
+    
+    return response
 
 @staff_member_required
 @require_POST
