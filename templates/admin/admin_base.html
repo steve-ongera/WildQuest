@@ -69,7 +69,7 @@
 
         .sidebar {
             background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-dark) 100%);
-            min-height: 100vh;
+            height: 100vh;
             width: 280px;
             position: fixed;
             top: 0;
@@ -78,8 +78,11 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: var(--shadow-lg);
             overflow-y: auto;
+            overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: var(--primary-light) transparent;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar::-webkit-scrollbar {
