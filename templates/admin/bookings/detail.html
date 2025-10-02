@@ -1,4 +1,5 @@
 {% extends 'admin/admin_base.html' %}
+{% load static %}
 
 {% block title %}Booking {{ booking.booking_id|slice:":8" }} - Travel Kenya Admin{% endblock %}
 
@@ -14,14 +15,229 @@
 </nav>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #0d6b68;
+        --primary-dark: #0a5652;
+        --primary-light: #e8f3f2;
+        --success-color: #198754;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --gray-light: #f8f9fa;
+        --gray-medium: #e9ecef;
+        --gray-dark: #6c757d;
+    }
+    
+    .page-title {
+        color: var(--primary-dark);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .breadcrumb-item a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    
+    .breadcrumb-item.active {
+        color: var(--gray-dark);
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        background-color: white;
+        border-bottom: 1px solid var(--gray-medium);
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+    }
+    
+    .card-header h5 {
+        margin-bottom: 0;
+        color: var(--primary-dark);
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+    
+    .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-outline-success {
+        color: var(--success-color);
+        border-color: var(--success-color);
+    }
+    
+    .btn-outline-success:hover {
+        background-color: var(--success-color);
+        border-color: var(--success-color);
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    .badge.bg-primary {
+        background-color: var(--primary-color) !important;
+    }
+    
+    .badge.bg-success {
+        background-color: var(--success-color) !important;
+    }
+    
+    .badge.bg-warning {
+        background-color: var(--warning-color) !important;
+        color: #000;
+    }
+    
+    .badge.bg-danger {
+        background-color: var(--danger-color) !important;
+    }
+    
+    .badge.bg-info {
+        background-color: #0dcaf0 !important;
+    }
+    
+    .badge.bg-secondary {
+        background-color: var(--gray-dark) !important;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+    
+    .table-borderless th {
+        padding-left: 0;
+        width: 40%;
+    }
+    
+    .table-borderless td {
+        padding-right: 0;
+    }
+    
+    .dropdown-menu {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        border-radius: 0.5rem;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+    
+    .dropdown-item:hover {
+        background-color: var(--primary-light);
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid var(--gray-medium);
+    }
+    
+    .modal-footer {
+        border-top: 1px solid var(--gray-medium);
+    }
+    
+    .text-success {
+        color: var(--success-color) !important;
+    }
+    
+    .text-danger {
+        color: var(--danger-color) !important;
+    }
+    
+    .border-top {
+        border-top: 1px solid var(--gray-medium) !important;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+    }
+    
+    .payment-item {
+        border: 1px solid var(--gray-medium);
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: var(--gray-light);
+    }
+    
+    .payment-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .quick-action-btn {
+        padding: 0.75rem;
+        text-align: left;
+    }
+    
+    .info-section {
+        background-color: var(--primary-light);
+        border-left: 4px solid var(--primary-color);
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin: 1rem 0;
+    }
+    
+    @media (max-width: 768px) {
+        .d-flex.justify-content-between {
+            flex-direction: column;
+        }
+        
+        .d-flex.justify-content-between .btn-group {
+            margin-top: 1rem;
+        }
+        
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Booking #{{ booking.booking_id|slice:":8" }}...</h2>
+    <div>
+        <h1 class="page-title">Booking Details</h1>
+        <h2 class="h4 mb-0 text-muted">Booking #{{ booking.booking_id|slice:":8" }}...</h2>
+    </div>
     <div class="btn-group">
         <div class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-cog me-2"></i>Actions
+                <i class="bi bi-gear-fill me-2"></i>Actions
             </button>
             <ul class="dropdown-menu">
                 <li>
@@ -29,7 +245,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="status" value="confirmed">
                         <button type="submit" class="dropdown-item">
-                            <i class="fas fa-check text-success me-2"></i>Confirm Booking
+                            <i class="bi bi-check-circle text-success me-2"></i>Confirm Booking
                         </button>
                     </form>
                 </li>
@@ -38,13 +254,13 @@
                         {% csrf_token %}
                         <input type="hidden" name="status" value="cancelled">
                         <button type="submit" class="dropdown-item">
-                            <i class="fas fa-times text-danger me-2"></i>Cancel Booking
+                            <i class="bi bi-x-circle text-danger me-2"></i>Cancel Booking
                         </button>
                     </form>
                 </li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2"></i>Send Email</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print Voucher</a></li>
+                <li><a class="dropdown-item" href="#"><i class="bi bi-envelope me-2"></i>Send Email</a></li>
+                <li><a class="dropdown-item" href="#"><i class="bi bi-printer me-2"></i>Print Voucher</a></li>
             </ul>
         </div>
     </div>
@@ -56,7 +272,7 @@
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
+                    <i class="bi bi-info-circle me-2"></i>
                     Booking Information
                 </h5>
             </div>
@@ -65,13 +281,13 @@
                     <div class="col-md-6">
                         <table class="table table-borderless">
                             <tr>
-                                <th width="40%">Booking ID:</th>
-                                <td><code>{{ booking.booking_id }}</code></td>
+                                <th>Booking ID:</th>
+                                <td><code class="text-primary">{{ booking.booking_id }}</code></td>
                             </tr>
                             <tr>
                                 <th>Event:</th>
                                 <td>
-                                    <a href="{% url 'admin_event_detail' booking.event.id %}" class="text-decoration-none">
+                                    <a href="{% url 'admin_event_detail' booking.event.id %}" class="text-decoration-none fw-bold">
                                         {{ booking.event.title }}
                                     </a>
                                 </td>
@@ -93,16 +309,16 @@
                     <div class="col-md-6">
                         <table class="table table-borderless">
                             <tr>
-                                <th width="40%">Status:</th>
+                                <th>Status:</th>
                                 <td>
-                                    <span class="badge bg-{% if booking.status == 'confirmed' or booking.status == 'paid' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %} fs-6">
+                                    <span class="badge bg-{% if booking.status == 'confirmed' or booking.status == 'paid' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %} status-badge">
                                         {{ booking.get_status_display }}
                                     </span>
                                 </td>
                             </tr>
                             <tr>
                                 <th>Booking Method:</th>
-                                <td><span class="badge bg-info">{{ booking.get_booking_method_display }}</span></td>
+                                <td><span class="badge bg-info status-badge">{{ booking.get_booking_method_display }}</span></td>
                             </tr>
                             <tr>
                                 <th>Booked Date:</th>
@@ -137,7 +353,7 @@
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-user me-2"></i>
+                    <i class="bi bi-person me-2"></i>
                     Customer Information
                 </h5>
             </div>
@@ -146,16 +362,16 @@
                     <div class="col-md-6">
                         <table class="table table-borderless">
                             <tr>
-                                <th width="40%">Name:</th>
-                                <td>{{ booking.customer_name }}</td>
+                                <th>Name:</th>
+                                <td class="fw-bold">{{ booking.customer_name }}</td>
                             </tr>
                             <tr>
                                 <th>Email:</th>
-                                <td><a href="mailto:{{ booking.customer_email }}">{{ booking.customer_email }}</a></td>
+                                <td><a href="mailto:{{ booking.customer_email }}" class="text-decoration-none">{{ booking.customer_email }}</a></td>
                             </tr>
                             <tr>
                                 <th>Phone:</th>
-                                <td><a href="tel:{{ booking.customer_phone }}">{{ booking.customer_phone }}</a></td>
+                                <td><a href="tel:{{ booking.customer_phone }}" class="text-decoration-none">{{ booking.customer_phone }}</a></td>
                             </tr>
                         </table>
                     </div>
@@ -163,7 +379,7 @@
                         <table class="table table-borderless">
                             {% if booking.customer_address %}
                             <tr>
-                                <th width="40%">Address:</th>
+                                <th>Address:</th>
                                 <td>{{ booking.customer_address }}</td>
                             </tr>
                             {% endif %}
@@ -171,9 +387,9 @@
                             <tr>
                                 <th>Emergency Contact:</th>
                                 <td>
-                                    {{ booking.emergency_contact_name }}
+                                    <span class="fw-bold">{{ booking.emergency_contact_name }}</span>
                                     {% if booking.emergency_contact_phone %}
-                                        <br><a href="tel:{{ booking.emergency_contact_phone }}">{{ booking.emergency_contact_phone }}</a>
+                                        <br><a href="tel:{{ booking.emergency_contact_phone }}" class="text-decoration-none">{{ booking.emergency_contact_phone }}</a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -183,16 +399,16 @@
                 </div>
 
                 {% if booking.special_requests %}
-                <div class="mt-3">
-                    <h6>Special Requests:</h6>
-                    <p class="text-muted">{{ booking.special_requests }}</p>
+                <div class="info-section">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-left-text me-2"></i>Special Requests</h6>
+                    <p class="mb-0">{{ booking.special_requests }}</p>
                 </div>
                 {% endif %}
 
                 {% if booking.dietary_requirements %}
-                <div class="mt-3">
-                    <h6>Dietary Requirements:</h6>
-                    <p class="text-muted">{{ booking.dietary_requirements }}</p>
+                <div class="info-section">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-heart me-2"></i>Dietary Requirements</h6>
+                    <p class="mb-0">{{ booking.dietary_requirements }}</p>
                 </div>
                 {% endif %}
             </div>
@@ -201,15 +417,16 @@
         <!-- Participants -->
         {% if participants %}
         <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="fas fa-users me-2"></i>
-                    Participants ({{ participants.count }})
+                    <i class="bi bi-people me-2"></i>
+                    Participants
                 </h5>
+                <span class="badge bg-primary">{{ participants.count }} total</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -222,17 +439,17 @@
                         <tbody>
                             {% for participant in participants %}
                                 <tr>
-                                    <td>{{ participant.name }}</td>
+                                    <td class="fw-bold">{{ participant.name }}</td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ participant.get_participant_type_display }}</span>
+                                        <span class="badge bg-secondary status-badge">{{ participant.get_participant_type_display }}</span>
                                     </td>
                                     <td>{% if participant.age %}{{ participant.age }}{% else %}-{% endif %}</td>
                                     <td>
-                                        {% if participant.id_number %}ID: {{ participant.id_number }}{% endif %}
-                                        {% if participant.passport_number %}Passport: {{ participant.passport_number }}{% endif %}
+                                        {% if participant.id_number %}<small>ID: {{ participant.id_number }}</small>{% endif %}
+                                        {% if participant.passport_number %}<small>Passport: {{ participant.passport_number }}</small>{% endif %}
                                         {% if not participant.id_number and not participant.passport_number %}-{% endif %}
                                     </td>
-                                    <td>{% if participant.medical_conditions %}{{ participant.medical_conditions }}{% else %}-{% endif %}</td>
+                                    <td>{% if participant.medical_conditions %}<small>{{ participant.medical_conditions }}</small>{% else %}-{% endif %}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -249,7 +466,7 @@
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-money-bill-wave me-2"></i>
+                    <i class="bi bi-currency-dollar me-2"></i>
                     Pricing Breakdown
                 </h5>
             </div>
@@ -271,15 +488,15 @@
                         <td class="text-end">KSh {{ booking.tax_amount|floatformat:0 }}</td>
                     </tr>
                     {% endif %}
-                    <tr class="border-top">
+                    <tr class="border-top fw-bold">
                         <th class="fs-5">Total Amount:</th>
-                        <td class="text-end fs-5"><strong>KSh {{ booking.total_amount|floatformat:0 }}</strong></td>
+                        <td class="text-end fs-5">KSh {{ booking.total_amount|floatformat:0 }}</td>
                     </tr>
                 </table>
 
                 {% if booking.pricing_tier %}
-                <div class="mt-3">
-                    <h6>Pricing Tier:</h6>
+                <div class="mt-3 p-3 bg-light rounded">
+                    <h6 class="fw-bold mb-2">Pricing Tier:</h6>
                     <span class="badge bg-primary">{{ booking.pricing_tier.name }}</span>
                 </div>
                 {% endif %}
@@ -290,36 +507,33 @@
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-credit-card me-2"></i>
+                    <i class="bi bi-credit-card me-2"></i>
                     Payment History
                 </h5>
             </div>
             <div class="card-body">
                 {% if payments %}
                     {% for payment in payments %}
-                        <div class="d-flex justify-content-between align-items-start mb-3 p-3 border rounded">
-                            <div>
-                                <h6 class="mb-1">{{ payment.get_payment_method_display }}</h6>
-                                <small class="text-muted">{{ payment.initiated_at|date:"M d, Y H:i" }}</small>
-                                {% if payment.transaction_reference %}
-                                    <br><small class="text-muted">Ref: {{ payment.transaction_reference }}</small>
-                                {% endif %}
-                            </div>
-                            <div class="text-end">
-                                <div class="fs-6 fw-bold">KSh {{ payment.amount|floatformat:0 }}</div>
-                                <span class="badge bg-{% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}warning{% elif payment.status == 'failed' %}danger{% else %}secondary{% endif %}">
-                                    {{ payment.get_status_display }}
-                                </span>
+                        <div class="payment-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">{{ payment.get_payment_method_display }}</h6>
+                                    <small class="text-muted">{{ payment.initiated_at|date:"M d, Y H:i" }}</small>
+                                    {% if payment.transaction_reference %}
+                                        <br><small class="text-muted">Ref: {{ payment.transaction_reference }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <div class="fs-6 fw-bold text-primary">KSh {{ payment.amount|floatformat:0 }}</div>
+                                    <span class="badge bg-{% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}warning{% elif payment.status == 'failed' %}danger{% else %}secondary{% endif %} status-badge">
+                                        {{ payment.get_status_display }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
-                {% else %}
-                    <p class="text-muted text-center">No payments recorded</p>
-                {% endif %}
 
-                <!-- Payment Summary -->
-                <!-- Payment Summary -->
-                {% if payments %}
+                    <!-- Payment Summary -->
                     <div class="border-top pt-3 mt-3">
                         <div class="d-flex justify-content-between mb-2">
                             <strong>Total Paid:</strong>
@@ -332,6 +546,11 @@
                             </strong>
                         </div>
                     </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-credit-card display-4 text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No payments recorded</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -340,30 +559,30 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-bolt me-2"></i>
+                    <i class="bi bi-lightning me-2"></i>
                     Quick Actions
                 </h5>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#statusModal">
-                        <i class="fas fa-edit me-2"></i>Update Status
+                    <button type="button" class="btn btn-primary quick-action-btn" data-bs-toggle="modal" data-bs-target="#statusModal">
+                        <i class="bi bi-pencil-square me-2"></i>Update Status
                     </button>
                     
-                    <a href="mailto:{{ booking.customer_email }}?subject=Regarding your booking {{ booking.booking_id|slice:':8' }}" class="btn btn-outline-primary">
-                        <i class="fas fa-envelope me-2"></i>Send Email
+                    <a href="mailto:{{ booking.customer_email }}?subject=Regarding your booking {{ booking.booking_id|slice:':8' }}" class="btn btn-outline-primary quick-action-btn">
+                        <i class="bi bi-envelope me-2"></i>Send Email
                     </a>
                     
-                    <a href="tel:{{ booking.customer_phone }}" class="btn btn-outline-success">
-                        <i class="fas fa-phone me-2"></i>Call Customer
+                    <a href="tel:{{ booking.customer_phone }}" class="btn btn-outline-success quick-action-btn">
+                        <i class="bi bi-telephone me-2"></i>Call Customer
                     </a>
                     
-                    <button type="button" class="btn btn-outline-secondary">
-                        <i class="fas fa-print me-2"></i>Print Voucher
+                    <button type="button" class="btn btn-outline-secondary quick-action-btn">
+                        <i class="bi bi-printer me-2"></i>Print Voucher
                     </button>
                     
-                    <button type="button" class="btn btn-outline-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>Add Note
+                    <button type="button" class="btn btn-outline-warning quick-action-btn">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Add Note
                     </button>
                 </div>
             </div>
@@ -383,7 +602,7 @@
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="status" class="form-label">Current Status: <span class="badge bg-warning">{{ booking.get_status_display }}</span></label>
+                        <label for="status" class="form-label">Current Status: <span class="badge bg-warning status-badge">{{ booking.get_status_display }}</span></label>
                         <select name="status" id="status" class="form-select" required>
                             <option value="">Select new status...</option>
                             {% for value, label in booking.BOOKING_STATUS %}
@@ -392,7 +611,7 @@
                         </select>
                     </div>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
+                        <i class="bi bi-info-circle me-2"></i>
                         Changing status will automatically update timestamps and may trigger email notifications.
                     </div>
                 </div>
@@ -404,4 +623,33 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add confirmation for status changes in dropdown
+        const statusForms = document.querySelectorAll('.dropdown-menu form');
+        statusForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const status = this.querySelector('input[name="status"]').value;
+                const action = status === 'confirmed' ? 'confirm' : 'cancel';
+                if (!confirm(`Are you sure you want to ${action} this booking?`)) {
+                    e.preventDefault();
+                }
+            });
+        });
+        
+        // Status modal form confirmation
+        const statusModalForm = document.querySelector('#statusModal form');
+        if (statusModalForm) {
+            statusModalForm.addEventListener('submit', function(e) {
+                const status = this.querySelector('select[name="status"]').value;
+                if (status && !confirm(`Are you sure you want to update the booking status to "${status}"?`)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
