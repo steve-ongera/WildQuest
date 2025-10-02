@@ -136,6 +136,7 @@
     .table th {
         font-weight: 600;
         color: var(--primary-dark);
+        border-radius: 2px;
     }
     
     .table-borderless th {
@@ -279,7 +280,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <table class="table table-borderless">
+                        <table class="table">
                             <tr>
                                 <th>Booking ID:</th>
                                 <td><code class="text-primary">{{ booking.booking_id }}</code></td>
@@ -307,7 +308,7 @@
                         </table>
                     </div>
                     <div class="col-md-6">
-                        <table class="table table-borderless">
+                        <table class="table">
                             <tr>
                                 <th>Status:</th>
                                 <td>
@@ -360,7 +361,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <table class="table table-borderless">
+                        <table class="table">
                             <tr>
                                 <th>Name:</th>
                                 <td class="fw-bold">{{ booking.customer_name }}</td>
@@ -376,7 +377,7 @@
                         </table>
                     </div>
                     <div class="col-md-6">
-                        <table class="table table-borderless">
+                        <table class="table">
                             {% if booking.customer_address %}
                             <tr>
                                 <th>Address:</th>
@@ -471,7 +472,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <table class="table table-borderless">
+                <table class="table">
                     <tr>
                         <th>Base Amount:</th>
                         <td class="text-end">KSh {{ booking.base_amount|floatformat:0 }}</td>

@@ -6,12 +6,25 @@
 
 {% block extra_css %}
 <style>
+    :root {
+        --primary-color: #0d6b68;
+        --primary-dark: #0a5652;
+        --primary-light: #e8f3f2;
+        --success-color: #198754;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --info-color: #17a2b8;
+        --gray-light: #f8f9fa;
+        --gray-medium: #e9ecef;
+        --gray-dark: #6c757d;
+    }
+
     .stats-card {
         background: white;
-        border-radius: 8px;
+        border-radius: 6px;
         padding: 25px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #f1f3f4;
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
@@ -25,17 +38,18 @@
         left: 0;
         width: 4px;
         height: 100%;
-        background: var(--bs-primary);
+        background: var(--primary-color);
     }
 
-    .stats-card.success::before { background: var(--bs-success); }
-    .stats-card.warning::before { background: var(--bs-warning); }
-    .stats-card.danger::before { background: var(--bs-danger); }
-    .stats-card.info::before { background: var(--bs-info); }
+    .stats-card.success::before { background: var(--success-color); }
+    .stats-card.warning::before { background: var(--warning-color); }
+    .stats-card.danger::before { background: var(--danger-color); }
+    .stats-card.info::before { background: var(--info-color); }
 
     .stats-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-color: var(--primary-light);
     }
 
     .stats-number {
@@ -43,47 +57,74 @@
         font-weight: 700;
         color: #1e2832;
         margin: 0;
+        line-height: 1.2;
     }
 
     .stats-label {
-        color: #6c757d;
+        color: var(--gray-dark);
         font-size: 0.9rem;
         font-weight: 500;
-        margin: 0;
+        margin: 0 0 8px 0;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     .stats-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3rem;
+        font-size: 1.5rem;
         color: white;
         margin-left: auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+
+    .stats-icon.primary { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); }
+    .stats-icon.success { background: linear-gradient(135deg, var(--success-color), #157347); }
+    .stats-icon.info { background: linear-gradient(135deg, var(--info-color), #117a8b); }
+    .stats-icon.warning { background: linear-gradient(135deg, var(--warning-color), #d39e00); }
 
     .chart-container {
         background: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #f1f3f4;
         overflow: hidden;
         margin-bottom: 25px;
+        transition: all 0.3s ease;
+        
+        /* Added height */
+        height: 500px; /* adjust as needed */
+        /* Or use min-height for flexibility */
+        /* min-height: 400px; */
+    }
+
+    .chart-container canvas,
+    .chart-container svg {
+        height: 100% !important;
+        width: 100% !important;
+    }
+
+
+
+    .chart-container:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     }
 
     .chart-header {
-        background: linear-gradient(135deg, #1e2832 0%, #34495e 100%);
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
         color: white;
-        padding: 20px;
+        padding: 20px 25px;
         border: none;
     }
 
     .chart-header h5 {
         margin: 0;
         font-weight: 600;
+        font-size: 1.1rem;
     }
 
     .chart-body {
@@ -92,12 +133,12 @@
 
     .activity-item {
         padding: 15px 0;
-        border-bottom: 1px solid #f1f3f4;
+        border-bottom: 1px solid var(--gray-medium);
         transition: all 0.2s ease;
     }
 
     .activity-item:hover {
-        background: #f8f9fa;
+        background: var(--primary-light);
         border-radius: 8px;
         padding: 15px;
         margin: 0 -15px;
@@ -120,50 +161,137 @@
     }
 
     .metric-change.positive {
-        color: #198754;
+        color: var(--success-color);
     }
 
     .metric-change.negative {
-        color: #dc3545;
+        color: var(--danger-color);
     }
 
     .table-dashboard {
         margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     .table-dashboard th {
-        background: #f8f9fa;
+        background: var(--gray-light);
         border: none;
         font-weight: 600;
-        color: #1e2832;
+        color: var(--primary-dark);
         padding: 15px;
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--primary-color);
     }
 
     .table-dashboard td {
         border: none;
         padding: 15px;
         vertical-align: middle;
+        border-bottom: 1px solid var(--gray-medium);
+    }
+
+    .table-dashboard tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-dashboard tr:hover td {
+        background-color: var(--primary-light);
     }
 
     .alert-custom {
         border: none;
         border-radius: 10px;
         padding: 15px 20px;
+        border-left: 4px solid;
+    }
+
+    .alert-warning.alert-custom {
+        border-left-color: var(--warning-color);
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    }
+
+    .alert-info.alert-custom {
+        border-left-color: var(--info-color);
+        background: linear-gradient(135deg, #d1ecf1, #b8e6f1);
+    }
+
+    .alert-danger.alert-custom {
+        border-left-color: var(--danger-color);
+        background: linear-gradient(135deg, #f8d7da, #f5c2c7);
+    }
+
+    .alert-success.alert-custom {
+        border-left-color: var(--success-color);
+        background: linear-gradient(135deg, #d1e7dd, #b8e6d1);
     }
 
     .progress-custom {
         height: 8px;
         border-radius: 10px;
-        background: #e9ecef;
+        background: var(--gray-medium);
+        overflow: hidden;
+    }
+
+    .progress-custom .progress-bar {
+        border-radius: 10px;
+        transition: width 0.6s ease;
     }
 
     .quick-stats {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 15px;
-        padding: 20px;
+        background: linear-gradient(135deg, var(--gray-light), var(--gray-medium));
+        border-radius: 12px;
+        padding: 25px;
+    }
+
+    .quick-stat-item {
+        text-align: center;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .quick-stat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--gray-dark);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    /* Chart specific styling */
+    .chart-legend {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+    }
+
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        margin-right: 6px;
     }
 
     @media (max-width: 768px) {
@@ -171,9 +299,35 @@
             font-size: 1.8rem;
         }
         
+        .stats-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+        }
+        
         .chart-body {
             padding: 15px;
         }
+        
+        .chart-header {
+            padding: 15px 20px;
+        }
+    }
+
+    /* Animation for numbers */
+    @keyframes countUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-number {
+        animation: countUp 0.8s ease-out;
     }
 </style>
 {% endblock %}
@@ -186,10 +340,10 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <p class="stats-label">Total Events</p>
-                    <h3 class="stats-number">{{ total_events }}</h3>
+                    <h3 class="stats-number animate-number">{{ total_events }}</h3>
                     <small class="text-success">{{ active_events }} active</small>
                 </div>
-                <div class="stats-icon" style="background: linear-gradient(135deg, #007bff, #0056b3);">
+                <div class="stats-icon primary">
                     <i class="bi bi-calendar-event"></i>
                 </div>
             </div>
@@ -201,10 +355,10 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <p class="stats-label">Total Bookings</p>
-                    <h3 class="stats-number">{{ total_bookings }}</h3>
+                    <h3 class="stats-number animate-number">{{ total_bookings }}</h3>
                     <small class="text-warning">{{ pending_bookings }} pending</small>
                 </div>
-                <div class="stats-icon" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                <div class="stats-icon success">
                     <i class="bi bi-ticket-perforated"></i>
                 </div>
             </div>
@@ -216,10 +370,10 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <p class="stats-label">Total Revenue</p>
-                    <h3 class="stats-number">KSh {{ total_revenue|floatformat:0 }}</h3>
+                    <h3 class="stats-number animate-number">KSh {{ total_revenue|floatformat:0 }}</h3>
                     <small class="text-success">KSh {{ revenue_30_days|floatformat:0 }} (30 days)</small>
                 </div>
-                <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8, #117a8b);">
+                <div class="stats-icon info">
                     <i class="bi bi-cash-stack"></i>
                 </div>
             </div>
@@ -231,10 +385,10 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <p class="stats-label">Avg Booking</p>
-                    <h3 class="stats-number">KSh {{ avg_booking_value|floatformat:0 }}</h3>
+                    <h3 class="stats-number animate-number">KSh {{ avg_booking_value|floatformat:0 }}</h3>
                     <small class="text-info">{{ total_customers }} customers</small>
                 </div>
-                <div class="stats-icon" style="background: linear-gradient(135deg, #ffc107, #d39e00);">
+                <div class="stats-icon warning">
                     <i class="bi bi-graph-up"></i>
                 </div>
             </div>
@@ -251,7 +405,7 @@
                 <h5><i class="bi bi-graph-up me-2"></i>Revenue & Bookings Trend (Last 12 Months)</h5>
             </div>
             <div class="chart-body">
-                <canvas id="revenueChart" height="100"></canvas>
+                <canvas id="revenueChart"></canvas>
             </div>
         </div>
     </div>
@@ -263,7 +417,7 @@
                 <h5><i class="bi bi-pie-chart me-2"></i>Booking Status Distribution</h5>
             </div>
             <div class="chart-body">
-                <canvas id="statusChart" height="200"></canvas>
+                <canvas id="statusChart" ></canvas>
             </div>
         </div>
     </div>
@@ -278,7 +432,7 @@
                 <h5><i class="bi bi-bar-chart me-2"></i>Category Performance</h5>
             </div>
             <div class="chart-body">
-                <canvas id="categoryChart" height="120"></canvas>
+                <canvas id="categoryChart"></canvas>
             </div>
         </div>
     </div>
@@ -290,7 +444,7 @@
                 <h5><i class="bi bi-activity me-2"></i>Daily Bookings (Last 30 Days)</h5>
             </div>
             <div class="chart-body">
-                <canvas id="dailyChart" height="150"></canvas>
+                <canvas id="dailyChart" ></canvas>
             </div>
         </div>
     </div>
@@ -338,8 +492,11 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
-                                    No events with bookings yet
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="bi bi-calendar-x"></i>
+                                        <p class="mb-0">No events with bookings yet</p>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -374,8 +531,8 @@
                     </div>
                 </div>
                 {% empty %}
-                <div class="text-center text-muted py-4">
-                    <i class="bi bi-inbox display-4"></i>
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
                     <p class="mb-0">No recent bookings</p>
                 </div>
                 {% endfor %}
@@ -394,7 +551,7 @@
             </div>
             <div class="chart-body">
                 {% if pending_whatsapp > 0 %}
-                <div class="alert alert-warning alert-custom d-flex align-items-center">
+                <div class="alert alert-warning alert-custom d-flex align-items-center mb-3">
                     <i class="bi bi-whatsapp me-3 fs-4"></i>
                     <div>
                         <strong>{{ pending_whatsapp }}</strong> WhatsApp booking requests pending
@@ -403,7 +560,7 @@
                 {% endif %}
 
                 {% if unresolved_inquiries > 0 %}
-                <div class="alert alert-info alert-custom d-flex align-items-center">
+                <div class="alert alert-info alert-custom d-flex align-items-center mb-3">
                     <i class="bi bi-envelope me-3 fs-4"></i>
                     <div>
                         <strong>{{ unresolved_inquiries }}</strong> unresolved customer inquiries
@@ -412,7 +569,7 @@
                 {% endif %}
 
                 {% if expiring_events > 0 %}
-                <div class="alert alert-danger alert-custom d-flex align-items-center">
+                <div class="alert alert-danger alert-custom d-flex align-items-center mb-3">
                     <i class="bi bi-calendar-x me-3 fs-4"></i>
                     <div>
                         <strong>{{ expiring_events }}</strong> events with booking deadlines expiring soon
@@ -439,7 +596,7 @@
                 <h5><i class="bi bi-credit-card me-2"></i>Payment Methods</h5>
             </div>
             <div class="chart-body">
-                <canvas id="paymentMethodsChart" height="200"></canvas>
+                <canvas id="paymentMethodsChart"></canvas>
             </div>
         </div>
     </div>
@@ -454,25 +611,25 @@
                 <div class="quick-stats">
                     <div class="row g-3">
                         <div class="col-6">
-                            <div class="text-center">
+                            <div class="quick-stat-item">
                                 <h4 class="mb-0 text-primary">{{ repeat_customers }}</h4>
                                 <small class="text-muted">Repeat Customers</small>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="text-center">
+                            <div class="quick-stat-item">
                                 <h4 class="mb-0 text-warning">{{ avg_rating }}</h4>
                                 <small class="text-muted">Avg Rating</small>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="text-center">
+                            <div class="quick-stat-item">
                                 <h4 class="mb-0 text-success">{{ total_reviews }}</h4>
                                 <small class="text-muted">Total Reviews</small>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="text-center">
+                            <div class="quick-stat-item">
                                 <h4 class="mb-0 text-info">{{ revenue_7_days|floatformat:0 }}</h4>
                                 <small class="text-muted">7-Day Revenue</small>
                             </div>
@@ -525,8 +682,11 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
-                                    No location data available
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <p class="mb-0">No location data available</p>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -540,10 +700,13 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Chart.js Configuration
 Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
 Chart.defaults.color = '#6c757d';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(13, 107, 104, 0.9)';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
 
 // Revenue and Bookings Trend Chart
 const revenueCtx = document.getElementById('revenueChart').getContext('2d');
@@ -556,12 +719,16 @@ new Chart(revenueCtx, {
         datasets: [{
             label: 'Revenue (KSh)',
             data: monthlyData.map(item => item.revenue),
-            borderColor: '#007bff',
-            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            borderColor: '#0d6b68',
+            backgroundColor: 'rgba(13, 107, 104, 0.1)',
             borderWidth: 3,
             fill: true,
             tension: 0.4,
-            yAxisID: 'y'
+            yAxisID: 'y',
+            pointBackgroundColor: '#0d6b68',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4
         }, {
             label: 'Bookings',
             data: monthlyData.map(item => item.bookings),
@@ -570,7 +737,11 @@ new Chart(revenueCtx, {
             borderWidth: 2,
             fill: false,
             tension: 0.4,
-            yAxisID: 'y1'
+            yAxisID: 'y1',
+            pointBackgroundColor: '#28a745',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 3
         }]
     },
     options: {
@@ -583,9 +754,16 @@ new Chart(revenueCtx, {
         scales: {
             x: {
                 display: true,
+                grid: {
+                    display: false
+                },
                 title: {
                     display: true,
-                    text: 'Month'
+                    text: 'Month',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
                 }
             },
             y: {
@@ -594,12 +772,19 @@ new Chart(revenueCtx, {
                 position: 'left',
                 title: {
                     display: true,
-                    text: 'Revenue (KSh)'
+                    text: 'Revenue (KSh)',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
                 },
                 ticks: {
                     callback: function(value) {
                         return 'KSh ' + value.toLocaleString();
                     }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
                 }
             },
             y1: {
@@ -608,7 +793,11 @@ new Chart(revenueCtx, {
                 position: 'right',
                 title: {
                     display: true,
-                    text: 'Bookings'
+                    text: 'Bookings',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
                 },
                 grid: {
                     drawOnChartArea: false,
@@ -618,7 +807,23 @@ new Chart(revenueCtx, {
         plugins: {
             legend: {
                 display: true,
-                position: 'top'
+                position: 'top',
+                labels: {
+                    padding: 20,
+                    font: {
+                        size: 12,
+                        weight: '600'
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(13, 107, 104, 0.9)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: '#0a5652',
+                borderWidth: 1,
+                cornerRadius: 8,
+                displayColors: true
             }
         }
     }
@@ -635,7 +840,7 @@ new Chart(statusCtx, {
         datasets: [{
             data: statusData.map(item => item.count),
             backgroundColor: [
-                '#007bff',
+                '#0d6b68',
                 '#28a745', 
                 '#ffc107',
                 '#dc3545',
@@ -643,18 +848,23 @@ new Chart(statusCtx, {
                 '#17a2b8'
             ],
             borderWidth: 0,
-            hoverOffset: 10
+            hoverOffset: 15
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '60%',
         plugins: {
             legend: {
                 position: 'bottom',
                 labels: {
                     padding: 20,
-                    usePointStyle: true
+                    usePointStyle: true,
+                    font: {
+                        size: 11,
+                        weight: '500'
+                    }
                 }
             },
             tooltip: {
@@ -662,7 +872,7 @@ new Chart(statusCtx, {
                     label: function(context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
                         const percentage = Math.round((context.raw / total) * 100);
-                        return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                        return `${context.label}: ${context.raw} (${percentage}%)`;
                     }
                 }
             }
@@ -681,15 +891,19 @@ new Chart(categoryCtx, {
         datasets: [{
             label: 'Bookings',
             data: categoryData.map(item => item.bookings),
-            backgroundColor: 'rgba(0, 123, 255, 0.8)',
-            borderColor: '#007bff',
-            borderWidth: 1
+            backgroundColor: 'rgba(13, 107, 104, 0.8)',
+            borderColor: '#0d6b68',
+            borderWidth: 1,
+            borderRadius: 4,
+            barPercentage: 0.6
         }, {
             label: 'Revenue (KSh)',
             data: categoryData.map(item => item.revenue),
             backgroundColor: 'rgba(40, 167, 69, 0.8)',
             borderColor: '#28a745',
             borderWidth: 1,
+            borderRadius: 4,
+            barPercentage: 0.6,
             yAxisID: 'y1'
         }]
     },
@@ -699,9 +913,16 @@ new Chart(categoryCtx, {
         scales: {
             x: {
                 display: true,
+                grid: {
+                    display: false
+                },
                 title: {
                     display: true,
-                    text: 'Categories'
+                    text: 'Categories',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
                 }
             },
             y: {
@@ -710,7 +931,14 @@ new Chart(categoryCtx, {
                 position: 'left',
                 title: {
                     display: true,
-                    text: 'Bookings'
+                    text: 'Bookings',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
                 }
             },
             y1: {
@@ -719,7 +947,11 @@ new Chart(categoryCtx, {
                 position: 'right',
                 title: {
                     display: true,
-                    text: 'Revenue (KSh)'
+                    text: 'Revenue (KSh)',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
                 },
                 grid: {
                     drawOnChartArea: false,
@@ -734,7 +966,14 @@ new Chart(categoryCtx, {
         plugins: {
             legend: {
                 display: true,
-                position: 'top'
+                position: 'top',
+                labels: {
+                    padding: 20,
+                    font: {
+                        size: 12,
+                        weight: '600'
+                    }
+                }
             }
         }
     }
@@ -753,13 +992,14 @@ new Chart(dailyCtx, {
             data: dailyData.map(item => item.bookings),
             borderColor: '#17a2b8',
             backgroundColor: 'rgba(23, 162, 184, 0.2)',
-            borderWidth: 2,
+            borderWidth: 3,
             fill: true,
             tension: 0.4,
             pointBackgroundColor: '#17a2b8',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
-            pointRadius: 4
+            pointRadius: 4,
+            pointHoverRadius: 6
         }]
     },
     options: {
@@ -773,13 +1013,27 @@ new Chart(dailyCtx, {
                 },
                 title: {
                     display: true,
-                    text: 'Bookings'
+                    text: 'Bookings',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
                 }
             },
             x: {
                 title: {
                     display: true,
-                    text: 'Day of Month'
+                    text: 'Day of Month',
+                    color: '#6c757d',
+                    font: {
+                        weight: '600'
+                    }
+                },
+                grid: {
+                    display: false
                 }
             }
         },
@@ -795,7 +1049,7 @@ new Chart(dailyCtx, {
 const paymentCtx = document.getElementById('paymentMethodsChart').getContext('2d');
 const paymentData = {{ payment_methods_data|safe }};
 
-if (paymentData.length > 0) {
+if (paymentData && paymentData.length > 0) {
     new Chart(paymentCtx, {
         type: 'doughnut',
         data: {
@@ -804,19 +1058,20 @@ if (paymentData.length > 0) {
                 data: paymentData.map(item => item.count),
                 backgroundColor: [
                     '#28a745',
-                    '#007bff', 
+                    '#0d6b68', 
                     '#ffc107',
                     '#dc3545',
                     '#6c757d',
                     '#17a2b8'
                 ],
                 borderWidth: 0,
-                hoverOffset: 8
+                hoverOffset: 12
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '55%',
             plugins: {
                 legend: {
                     position: 'bottom',
@@ -824,7 +1079,8 @@ if (paymentData.length > 0) {
                         padding: 15,
                         usePointStyle: true,
                         font: {
-                            size: 12
+                            size: 10,
+                            weight: '500'
                         }
                     }
                 },
@@ -833,7 +1089,7 @@ if (paymentData.length > 0) {
                         label: function(context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = Math.round((context.raw / total) * 100);
-                            return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                            return `${context.label}: ${context.raw} (${percentage}%)`;
                         }
                     }
                 }
@@ -843,7 +1099,7 @@ if (paymentData.length > 0) {
 } else {
     // Show message if no payment data
     paymentCtx.canvas.style.display = 'none';
-    paymentCtx.canvas.parentNode.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-credit-card display-6"></i><p class="mb-0 mt-2">No payment data available</p></div>';
+    paymentCtx.canvas.parentNode.innerHTML = '<div class="empty-state"><i class="bi bi-credit-card"></i><p class="mb-0 mt-2">No payment data available</p></div>';
 }
 
 // Auto-refresh data every 5 minutes
@@ -855,22 +1111,25 @@ setInterval(function() {
 function animateNumbers() {
     const numbers = document.querySelectorAll('.stats-number');
     numbers.forEach(number => {
-        const finalValue = parseInt(number.textContent.replace(/[^\d]/g, ''));
-        if (finalValue > 0) {
+        const text = number.textContent;
+        const hasCurrency = text.includes('KSh');
+        const finalValue = parseFloat(text.replace(/[^\d.]/g, ''));
+        
+        if (!isNaN(finalValue) && finalValue > 0) {
             let currentValue = 0;
-            const increment = finalValue / 100;
+            const increment = finalValue / 50;
             const timer = setInterval(() => {
                 currentValue += increment;
                 if (currentValue >= finalValue) {
                     currentValue = finalValue;
                     clearInterval(timer);
                 }
-                if (number.textContent.includes('KSh')) {
+                if (hasCurrency) {
                     number.textContent = 'KSh ' + Math.floor(currentValue).toLocaleString();
                 } else {
-                    number.textContent = Math.floor(currentValue);
+                    number.textContent = Math.floor(currentValue).toLocaleString();
                 }
-            }, 20);
+            }, 30);
         }
     });
 }
@@ -878,6 +1137,17 @@ function animateNumbers() {
 // Initialize animations when page loads
 document.addEventListener('DOMContentLoaded', function() {
     animateNumbers();
+    
+    // Add hover effects to chart containers
+    const chartContainers = document.querySelectorAll('.chart-container');
+    chartContainers.forEach(container => {
+        container.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        container.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
 });
 </script>
 {% endblock %}
