@@ -1,4 +1,5 @@
 {% extends 'admin/admin_base.html' %}
+{% load static %}
 
 {% block title %}Bookings Management - Travel Kenya Admin{% endblock %}
 
@@ -13,19 +14,219 @@
 </nav>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #0d6b68;
+        --primary-dark: #0a5652;
+        --primary-light: #e8f3f2;
+        --success-color: #198754;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --gray-light: #f8f9fa;
+        --gray-medium: #e9ecef;
+        --gray-dark: #6c757d;
+    }
+    
+    .page-title {
+        color: var(--primary-dark);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .breadcrumb-item a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    
+    .breadcrumb-item.active {
+        color: var(--gray-dark);
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        background-color: white;
+        border-bottom: 1px solid var(--gray-medium);
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+    }
+    
+    .card-header h5 {
+        margin-bottom: 0;
+        color: var(--primary-dark);
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+    
+    .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    .badge.bg-primary {
+        background-color: var(--primary-color) !important;
+    }
+    
+    .badge.bg-success {
+        background-color: var(--success-color) !important;
+    }
+    
+    .badge.bg-warning {
+        background-color: var(--warning-color) !important;
+        color: #000;
+    }
+    
+    .badge.bg-danger {
+        background-color: var(--danger-color) !important;
+    }
+    
+    .badge.bg-info {
+        background-color: #0dcaf0 !important;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: var(--primary-dark);
+        background-color: var(--primary-light);
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 107, 104, 0.05);
+    }
+    
+    .table-responsive {
+        border-radius: 0.5rem;
+    }
+    
+    .dropdown-menu {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        border-radius: 0.5rem;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+    
+    .dropdown-item:hover {
+        background-color: var(--primary-light);
+    }
+    
+    .pagination .page-link {
+        color: var(--primary-color);
+        border: 1px solid var(--gray-medium);
+    }
+    
+    .pagination .page-link:hover {
+        background-color: var(--primary-light);
+        border-color: var(--primary-color);
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(13, 107, 104, 0.25);
+    }
+    
+    .text-success {
+        color: var(--success-color) !important;
+    }
+    
+    .text-danger {
+        color: var(--danger-color) !important;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+    }
+    
+    .action-btn-group .btn {
+        margin-right: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .action-btn-group .btn {
+            margin-bottom: 0.5rem;
+            margin-right: 0;
+        }
+        
+        .d-flex.justify-content-between {
+            flex-direction: column;
+        }
+        
+        .d-flex.justify-content-between .btn-group {
+            margin-top: 1rem;
+        }
+        
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Bookings Management</h2>
+    <div>
+        <h1 class="page-title">Bookings Management</h1>
+        <p class="text-muted mb-0">Manage and track all booking requests</p>
+    </div>
     <div class="btn-group">
         <a href="{% url 'admin_export_bookings' %}" class="btn btn-outline-primary">
-            <i class="fas fa-download me-2"></i>Export CSV
+            <i class="bi bi-download me-2"></i>Export CSV
         </a>
     </div>
 </div>
 
 <!-- Filters -->
 <div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-funnel me-2"></i>
+            Filter Bookings
+        </h5>
+    </div>
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-3">
@@ -54,10 +255,9 @@
                 <label class="form-label">Date</label>
                 <input type="date" name="date" class="form-control" value="{{ filters.date }}">
             </div>
-            <div class="col-md-2">
-                <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn btn-outline-primary w-100">
-                    <i class="fas fa-search"></i> Filter
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i> Filter
                 </button>
             </div>
         </form>
@@ -66,11 +266,12 @@
 
 <!-- Bookings Table -->
 <div class="card">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
-            <i class="fas fa-ticket-alt me-2"></i>
+            <i class="bi bi-ticket-perforated me-2"></i>
             Bookings List
         </h5>
+        <span class="badge bg-primary">{{ bookings.paginator.count }} total bookings</span>
     </div>
     <div class="card-body p-0">
         {% if bookings %}
@@ -100,9 +301,9 @@
                                         <strong>{{ booking.customer_name }}</strong>
                                         <br>
                                         <small class="text-muted">
-                                            <i class="fas fa-envelope me-1"></i>{{ booking.customer_email }}
+                                            <i class="bi bi-envelope me-1"></i>{{ booking.customer_email }}
                                             <br>
-                                            <i class="fas fa-phone me-1"></i>{{ booking.customer_phone }}
+                                            <i class="bi bi-telephone me-1"></i>{{ booking.customer_phone }}
                                         </small>
                                     </div>
                                 </td>
@@ -130,10 +331,10 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <span class="badge bg-info">{{ booking.get_booking_method_display }}</span>
+                                    <span class="badge bg-info status-badge">{{ booking.get_booking_method_display }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-{% if booking.status == 'confirmed' or booking.status == 'paid' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                    <span class="badge bg-{% if booking.status == 'confirmed' or booking.status == 'paid' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %} status-badge">
                                         {{ booking.get_status_display }}
                                     </span>
                                 </td>
@@ -147,11 +348,11 @@
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="{% url 'admin_booking_detail' booking.booking_id %}" class="btn btn-outline-primary" title="View Details">
-                                            <i class="fas fa-eye"></i>
+                                            <i class="bi bi-eye"></i>
                                         </a>
                                         <div class="dropdown">
                                             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-cog"></i>
+                                                <i class="bi bi-gear"></i>
                                             </button>
                                             <ul class="dropdown-menu">
                                                 <li>
@@ -159,7 +360,7 @@
                                                         {% csrf_token %}
                                                         <input type="hidden" name="status" value="confirmed">
                                                         <button type="submit" class="dropdown-item">
-                                                            <i class="fas fa-check text-success me-2"></i>Confirm
+                                                            <i class="bi bi-check-circle text-success me-2"></i>Confirm
                                                         </button>
                                                     </form>
                                                 </li>
@@ -168,7 +369,7 @@
                                                         {% csrf_token %}
                                                         <input type="hidden" name="status" value="cancelled">
                                                         <button type="submit" class="dropdown-item">
-                                                            <i class="fas fa-times text-danger me-2"></i>Cancel
+                                                            <i class="bi bi-x-circle text-danger me-2"></i>Cancel
                                                         </button>
                                                     </form>
                                                 </li>
@@ -186,10 +387,12 @@
             {% if bookings.has_other_pages %}
                 <div class="card-footer">
                     <nav>
-                        <ul class="pagination mb-0">
+                        <ul class="pagination mb-0 justify-content-center">
                             {% if bookings.has_previous %}
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ bookings.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                                    <a class="page-link" href="?page={{ bookings.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="bi bi-chevron-left"></i> Previous
+                                    </a>
                                 </li>
                             {% endif %}
 
@@ -207,7 +410,9 @@
 
                             {% if bookings.has_next %}
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ bookings.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                                    <a class="page-link" href="?page={{ bookings.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        Next <i class="bi bi-chevron-right"></i>
+                                    </a>
                                 </li>
                             {% endif %}
                         </ul>
@@ -216,11 +421,33 @@
             {% endif %}
         {% else %}
             <div class="text-center py-5">
-                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                <h5>No Bookings Found</h5>
+                <i class="bi bi-ticket-perforated display-1 text-muted mb-3"></i>
+                <h5 class="text-muted">No Bookings Found</h5>
                 <p class="text-muted">No bookings match your current filters.</p>
+                <a href="?" class="btn btn-primary mt-2">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Clear Filters
+                </a>
             </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add any JavaScript functionality here if needed
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add confirmation for status changes
+        const statusForms = document.querySelectorAll('form[action*="update_status"]');
+        statusForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const status = this.querySelector('input[name="status"]').value;
+                const action = status === 'confirmed' ? 'confirm' : 'cancel';
+                if (!confirm(`Are you sure you want to ${action} this booking?`)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}
